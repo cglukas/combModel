@@ -1,0 +1,8 @@
+- Create an extractor with masking
+- Create training data
+- Preprocess training data
+- Create a dataloader
+- Create model
+- Create trainer
+  - Add W&B
+  - Run trainings

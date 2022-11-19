@@ -1,9 +1,9 @@
 - [x] Create an extractor
   - [ ] Add masking
-- Create training data
-- Preprocess training data
-- Create a dataloader
-- Create model
-- Create trainer
-  - Add W&B
-  - Run trainings
+- [x] Create training data
+- [x] Preprocess training data
+- [x] Create a dataloader
+- [x] Create model
+- [x] Create trainer
+  - [ ] Add W&B
+  - [x] Run trainings

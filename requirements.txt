@@ -1,7 +1,9 @@
-torch --extra-index-url https://download.pytorch.org/whl/cu116
-torchvision --extra-index-url https://download.pytorch.org/whl/cu116
+torch
+torchvision
 torchmetrics
 adabelief-pytorch
 opencv-python
 matplotlib
 numpy
+
+facenet-pytorch

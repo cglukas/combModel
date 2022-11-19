@@ -1,4 +1,5 @@
-- Create an extractor with masking
+- [x] Create an extractor
+  - [ ] Add masking
 - Create training data
 - Preprocess training data
 - Create a dataloader

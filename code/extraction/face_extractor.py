@@ -38,12 +38,14 @@ class Extractor:
                 export_file = export_path / f"{i}_{jpg.name}"
                 cv2.imshow("hello", img/255)
                 cv2.waitKey(10)
-                # cv2.imwrite(str(export_file), img)
+                cv2.imwrite(str(export_file), img)
 
     def extract_single(self, jpg: Path) -> list:
         img = PIL.Image.open(str(jpg)).convert("RGB")
         bounding_boxes, confidence, landmarks = self.model.detect(img, landmarks=True)
         images = []
+        if landmarks is None:
+            return images
         for this_marks in landmarks:
             corners = np.zeros((3, 2), dtype=np.float32)
             corners[0] = this_marks[0]  # left eye
@@ -61,7 +63,4 @@ class Extractor:
 
 if __name__ == "__main__":
     extractor = Extractor()
-    for file in Path(
-        r"C:\Users\Lukas\PycharmProjects\combModel\data\source_clips"
-    ).iterdir():
-        extractor.extract(file)
+    extractor.extract(Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\source_clips\person2"))

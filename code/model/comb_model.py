@@ -1,6 +1,7 @@
 """Model"""
 import torch
 from torch import nn
+from torch.nn.modules.module import T
 
 alpha = 0.2
 
@@ -225,7 +226,6 @@ class CombModel(nn.Module):
             decoder.to(device)
             self.decoders.append(decoder)
 
-
     def progressive_forward(
         self, person: int, tensor: torch.Tensor, level: int, last_level_influence: float
     ):
@@ -236,6 +236,18 @@ class CombModel(nn.Module):
         return decoder.progressive_forward(
             latent, level, last_lvl_influence=last_level_influence
         )
+
+    def eval(self: T) -> T:
+        self.encoder.eval()
+        for decoder in self.decoders:
+            decoder.eval()
+        return super().eval()
+
+    def train(self: T, mode: bool = True) -> T:
+        self.encoder.train(mode)
+        for decoder in self.decoders:
+            decoder.train(mode)
+        return super().train(mode)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ OUTPUT_FOLDER = Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocesse
 def preprocess(folder: Path):
     all_images = list(folder.iterdir())
     output_folder = OUTPUT_FOLDER / folder.name
-    output_folder.mkdir(exist_ok=True)
+    output_folder.mkdir(exist_ok=True, parents=True)
     for image in tqdm(all_images):
         img = cv2.imread(str(image))
 
@@ -24,4 +24,4 @@ def preprocess(folder: Path):
 
 
 if __name__ == "__main__":
-    preprocess(Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\extracted\person1"))
+    preprocess(Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\extracted\person0"))

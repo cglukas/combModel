@@ -5,5 +5,5 @@
 - [x] Create a dataloader
 - [x] Create model
 - [x] Create trainer
-  - [ ] Add W&B
+  - [x] Add W&B
   - [x] Run trainings

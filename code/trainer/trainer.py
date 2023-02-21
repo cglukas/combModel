@@ -184,7 +184,7 @@ def train():
 
             torch.save(
                 model.state_dict(),
-                str(training_folder / f"model{level}_{round(blend,2)}.pth"),
+                str(training_folder / f"model{level}_{round(blend,1)}.pth"),
             )
 
 

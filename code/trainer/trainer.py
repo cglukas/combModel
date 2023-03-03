@@ -25,9 +25,12 @@ def train():
     training_folder.mkdir()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     max_persons = 3
+
     model = CombModel(device=device, persons=max_persons)
-    # model.load_state_dict(torch.load(r"C:\Users\Lukas\PycharmProjects\combModel\code\trainer\230220_204956\model2_0.66.pth"))
-    # model.to(device)
+    # model.load_state_dict(torch.load(r"C:\Users\Lukas\PycharmProjects\combModel\code\trainer\230224_132357\model4_0.7.pth"))
+    model.to(device)
+    level = 0
+    blend = 0.0
 
     batch_size = 5
     loader_0 = DataLoader(
@@ -37,7 +40,7 @@ def train():
             person=0,
         ),
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
     )
     loader_1 = DataLoader(
         SizeLoader(
@@ -46,7 +49,7 @@ def train():
             person=1,
         ),
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
     )
 
     loader_2 = DataLoader(
@@ -56,7 +59,7 @@ def train():
             person=2,
         ),
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
     )
 
     previews = [None for _ in range(max_persons)]
@@ -66,14 +69,12 @@ def train():
 
     # Hyper parameters:
     learning_rate = 1e-5
-    blend_rate = 0.01
+    blend_rate = 0.0001
     dataset_size = 20
 
     logging_epoch = 10
     max_level = 6
     epoch = -1
-    level = 0
-    blend = 0.0
 
     optimizer = AdaBelief(model.parameters(), lr=learning_rate)
     wandb.config.update(
@@ -108,7 +109,7 @@ def train():
             if samples_0.shape[-1] < 16:
                 samples_0 = torch.nn.functional.interpolate(samples_0, (16, 16))
                 inferred = torch.nn.functional.interpolate(inferred, (16, 16))
-            score = -metric(samples_0, inferred)
+            score = -metric(inferred, samples_0)
             score.backward()
             running_loss += score.item()
             optimizer.step()
@@ -121,7 +122,7 @@ def train():
             if samples_1.shape[-1] < 16:
                 samples_1 = torch.nn.functional.interpolate(samples_1, (16, 16))
                 inferred = torch.nn.functional.interpolate(inferred, (16, 16))
-            score = -metric(samples_1, inferred)
+            score = -metric(inferred, samples_1)
             score.backward()
             running_loss += score.item()
             optimizer.step()
@@ -134,7 +135,7 @@ def train():
             if samples_2.shape[-1] < 16:
                 samples_2 = torch.nn.functional.interpolate(samples_2, (16, 16))
                 inferred = torch.nn.functional.interpolate(inferred, (16, 16))
-            score = -metric(samples_2, inferred)
+            score = -metric(inferred, samples_2)
             score.backward()
             running_loss += score.item()
             optimizer.step()
@@ -168,7 +169,7 @@ def train():
             preview_image = pt_contact.permute(1, 2, 0).detach().cpu().numpy()
             preview_image = cv2.cvtColor(preview_image, cv2.COLOR_RGB2BGR)
             cv2.imshow("Deepfake Preview", preview_image)
-            cv2.waitKey(10)
+            cv2.waitKey(100)
             image = wandb.Image(pt_contact, caption="Reconstruction of model")
             wandb.log(
                 {

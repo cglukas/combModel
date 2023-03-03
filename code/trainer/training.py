@@ -1,5 +1,5 @@
 """Training utilities to run trainings with different configurations."""
-from typing import List
+from typing import List, Generator
 
 import torch
 from adabelief_pytorch import AdaBelief
@@ -24,7 +24,11 @@ class Trainer:
         """The metric of the training needs to create a score. This means it needs to 
         increase if the output improves. It's also necessary that the metric can be used
         like `metric(predictions, targets)`"""
-        self.dataloaders: List[DataLoader]
+        self.dataloaders: List[DataLoader] = [DataLoader([1,2], batch_size=1), DataLoader([1,2,3,4], batch_size=1)]
+
+        self._max_dataset_length = max(len(loader.dataset) for loader in self.dataloaders)
+        """The length of the longest dataset. Every other dataset will be repeated in order
+        to match this length."""
 
         self.current_person: int = 0
         """The current person that is trained. This will define which decoder of the
@@ -40,6 +44,27 @@ class Trainer:
     def train(self):
         """Start the training process."""
 
+    def get_next_samples(self) -> Generator[List[torch.Tensor], None, None]:
+        """Get the next samples of the dataloaders.
+
+        This will iterate over all dataloaders and yield the samples of them
+        until all samples of the longest dataset have been yielded once.
+        Smaller datasets are repeated in this process.
+        """
+        batch_size = self.dataloaders[0].batch_size
+        iterators = [iter(dataloader) for dataloader in self.dataloaders]
+        for i in range(int(self._max_dataset_length/batch_size)):
+            output = []
+
+            for j, _iter in enumerate(iterators):
+                try:
+                    output.append(next(_iter))
+                except StopIteration:
+                    _iter = iter(self.dataloaders[j])
+                    iterators[j] = _iter
+                    # Reinitialize smaller dataloaders
+                    output.append(next(_iter))
+            yield output
 
     def train_one_batch(self, batch: torch.Tensor):
         """Train one batch and perform backpropagation on it.
@@ -63,3 +88,6 @@ class Trainer:
         score.backward()
         self.optimizer.step()
         self.accumulated_score = score.item()
+
+if __name__ == '__main__':
+    Trainer().train()

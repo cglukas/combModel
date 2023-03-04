@@ -5,8 +5,8 @@ import torch.cuda
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
-from code.data_io.dataloader import SCALES, SizeLoader
-from code.model.comb_model import CombModel
+from development.data_io.dataloader import SCALES, SizeLoader
+from development.model.comb_model import CombModel
 
 
 def main():

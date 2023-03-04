@@ -1,7 +1,7 @@
 import logging
 import os
-from code.data_io.dataloader import SCALES, SizeLoader
-from code.model.comb_model import CombModel
+from development.data_io.dataloader import SCALES, SizeLoader
+from development.model.comb_model import CombModel
 from datetime import datetime
 from pathlib import Path
 

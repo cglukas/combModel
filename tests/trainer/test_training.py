@@ -3,7 +3,7 @@ from typing import Tuple
 import pytest
 from torch.utils.data import DataLoader
 
-from code.trainer.training import Trainer
+from development.trainer.training import Trainer
 
 
 @pytest.mark.parametrize("sizes", [(1,3), (1,1), (10, 10), (8,1,3)])

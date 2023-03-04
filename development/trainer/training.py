@@ -6,7 +6,7 @@ from adabelief_pytorch import AdaBelief
 from torch.utils.data import DataLoader
 from torchmetrics import StructuralSimilarityIndexMeasure
 
-from code.model.comb_model import CombModel
+from development.model.comb_model import CombModel
 
 
 class Trainer:

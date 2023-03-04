@@ -13,6 +13,8 @@ class Trainer:
     """Training object to train a model."""
 
     def __init__(self):
+        self.blend_rate = 0.001
+        """Rate at which the next level of the model is blended into the training."""
         self.accumulated_score: float = 0.0
         """The accumulated score of all training steps in one epoch. To get a measure 
         of the model performance divide this with the samples of the epoch."""
@@ -43,6 +45,31 @@ class Trainer:
 
     def train(self):
         """Start the training process."""
+        self.train_one_epoch()
+        self._increase_blend_and_level()
+
+    def _increase_blend_and_level(self):
+        """Increase the `current_blend` with the blend rate.
+
+        If the blend gets above 1.0 it will fall back to 0. The `current_level`
+        gets increased when the blend rate reached 1.0.
+        """
+        self.current_blend += self.blend_rate
+        if self.current_blend > 1:
+            self.current_blend = 0
+            self.current_level += 1
+        self.current_level = max(self.current_level, 8)
+
+    def train_one_epoch(self):
+        """Train the model for one epoch.
+
+        One epoch contains all samples of all dataloaders.
+        Smaller datasets are maybe repeated.
+        """
+        for samples in self.get_next_samples():
+            for person, single_sample in enumerate(samples):
+                self.current_person = person
+                self.train_one_batch(single_sample)
 
     def get_next_samples(self) -> Generator[List[torch.Tensor], None, None]:
         """Get the next samples of the dataloaders.
@@ -78,16 +105,20 @@ class Trainer:
         Args:
             batch: current batch of data (shape [batchsize, channels, width, height])
         """
-        inferred = self.model.progressive_forward(
+        score: torch.Tensor = -self.metric(self.process_batch(batch), batch)
+        score.backward()
+        self.optimizer.step()
+        self.accumulated_score = score.item()
+
+    def process_batch(self, batch: torch.Tensor) -> torch.Tensor:
+        """Process the batch with the current state of blend, person and level."""
+        return self.model.progressive_forward(
             person=self.current_person,
             tensor=batch,
             level=self.current_level,
             last_level_influence=self.current_blend,
         )
-        score: torch.Tensor = -self.metric(inferred, batch)
-        score.backward()
-        self.optimizer.step()
-        self.accumulated_score = score.item()
+
 
 if __name__ == '__main__':
     Trainer().train()

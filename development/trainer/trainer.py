@@ -1,3 +1,7 @@
+"""
+FIXME This file is an old training loop. It should not be used anymore.
+"""
+
 import logging
 import os
 from development.data_io.dataloader import SCALES, SizeLoader

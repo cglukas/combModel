@@ -1,4 +1,6 @@
 """Training utilities to run trainings with different configurations."""
+from datetime import datetime
+from pathlib import Path
 from typing import List, Generator
 
 import torch
@@ -7,29 +9,48 @@ from cv2 import cv2
 from torch.utils.data import DataLoader
 from torchmetrics import StructuralSimilarityIndexMeasure
 
+from development.data_io import dataloader
 from development.model.comb_model import CombModel
 
 
 class Trainer:
     """Training object to train a model."""
 
-    def __init__(self):
-        self.blend_rate = 0.001
+    def __init__(
+        self,
+        dataloaders: List[DataLoader],
+        show_preview=False,
+        device="cpu",
+        save_epochs=5,
+    ):
+
+        self.dataloaders: List[DataLoader] = dataloaders
+        self.show_preview = show_preview
+        self.device = device
+        self.save_epochs = save_epochs
+        self.train_start = datetime.now().strftime("%d-%m-%y_%H_%M")
+
+        self.blend_rate = 1e-4
         """Rate at which the next level of the model is blended into the training."""
         self.accumulated_score: float = 0.0
         """The accumulated score of all training steps in one epoch. To get a measure 
         of the model performance divide this with the samples of the epoch."""
-        self.model = CombModel()
+        self.model = CombModel(persons=len(dataloaders), device=self.device)
+        self.model.to(device)
         """The model to train."""
-        self.optimizer = None
+        self.optimizer = torch.optim.SGD(
+            self.model.parameters(), lr=1e-3, momentum=0.001
+        )
 
         self.metric = StructuralSimilarityIndexMeasure()
         """The metric of the training needs to create a score. This means it needs to 
         increase if the output improves. It's also necessary that the metric can be used
         like `metric(predictions, targets)`"""
-        self.dataloaders: List[DataLoader] = [DataLoader([1,2], batch_size=1), DataLoader([1,2,3,4], batch_size=1)]
+        self.metric.to(self.device)
 
-        self._max_dataset_length = max(len(loader.dataset) for loader in self.dataloaders)
+        self._max_dataset_length = max(
+            len(loader.dataset) for loader in self.dataloaders
+        )
         """The length of the longest dataset. Every other dataset will be repeated in order
         to match this length."""
 
@@ -43,11 +64,32 @@ class Trainer:
         self.current_blend: float = 0.0
         """The current influence of the next layer of the model. The allowed range is from
         0 to 1."""
+        self.epoch = 0
+
+        self.visualizer = TrainVisualizer()
 
     def train(self):
         """Start the training process."""
-        self.train_one_epoch()
-        self._increase_blend_and_level()
+        while True:
+            self.epoch += 1
+            self.train_one_epoch()
+            if self.epoch % self.save_epochs == 1:
+                self.save()
+            self._increase_blend_and_level()
+
+    def save(self):
+        filepath = (
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings")
+            / f"{self.train_start}"
+        )
+        if not filepath.exists():
+            print(f"{filepath} created")
+            filepath.mkdir(exist_ok=True)
+
+        torch.save(
+            self.model.state_dict(),
+            filepath / f"comb_model_{self.current_level}-{round(self.blend_rate, 2)}.pth",
+        )
 
     def _increase_blend_and_level(self):
         """Increase the `current_blend` with the blend rate.
@@ -59,7 +101,8 @@ class Trainer:
         if self.current_blend > 1:
             self.current_blend = 0
             self.current_level += 1
-        self.current_level = max(self.current_level, 8)
+        self.current_level = min(self.current_level, 8)
+        dataloader.SizeLoader.scale = dataloader.SCALES[self.current_level]
 
     def train_one_epoch(self):
         """Train the model for one epoch.
@@ -67,10 +110,29 @@ class Trainer:
         One epoch contains all samples of all dataloaders.
         Smaller datasets are maybe repeated.
         """
-        for samples in self.get_next_samples():
+        self.metric.reset()
+        self.accumulated_score = 0
+        i = 1  # prevent any zero division error
+        last_images = {}
+        for i, samples in enumerate(self.get_next_samples(), start=1):
+            self.visualizer.clear()
+
             for person, single_sample in enumerate(samples):
                 self.current_person = person
+                test_img = single_sample[0]
+                self.visualizer.add_image(test_img)
                 self.train_one_batch(single_sample)
+                last_images[person] = test_img
+
+        for person, img in last_images.items():
+            self.current_person = (person + 1) % len(samples)
+            self.visualizer.add_image(img)
+            swapped = self.process_batch(img.unsqueeze(dim=0))
+            self.visualizer.add_image(swapped.squeeze())
+        self.visualizer.show()
+        print(
+            f"Level {self.current_level} - {self.current_blend}, score: {self.accumulated_score/i}"
+        )
 
     def get_next_samples(self) -> Generator[List[torch.Tensor], None, None]:
         """Get the next samples of the dataloaders.
@@ -81,17 +143,19 @@ class Trainer:
         """
         batch_size = self.dataloaders[0].batch_size
         iterators = [iter(dataloader) for dataloader in self.dataloaders]
-        for i in range(int(self._max_dataset_length/batch_size)):
+        for i in range(int(self._max_dataset_length / batch_size)):
             output = []
 
             for j, _iter in enumerate(iterators):
                 try:
-                    output.append(next(_iter))
+                    sample = next(_iter)
                 except StopIteration:
                     _iter = iter(self.dataloaders[j])
                     iterators[j] = _iter
                     # Reinitialize smaller dataloaders
-                    output.append(next(_iter))
+                    sample = next(_iter)
+                sample = sample.to(self.device)
+                output.append(sample)
             yield output
 
     def train_one_batch(self, batch: torch.Tensor):
@@ -106,10 +170,16 @@ class Trainer:
         Args:
             batch: current batch of data (shape [batchsize, channels, width, height])
         """
-        score: torch.Tensor = -self.metric(self.process_batch(batch), batch)
+        self.optimizer.zero_grad()
+        inferred = self.process_batch(batch)
+        self.visualizer.add_image(inferred[0])
+        if batch.shape[-1] < 16:
+            batch = torch.nn.functional.interpolate(batch, (16, 16))
+            inferred = torch.nn.functional.interpolate(inferred, (16, 16))
+        score: torch.Tensor = -self.metric(inferred, batch)
         score.backward()
         self.optimizer.step()
-        self.accumulated_score = score.item()
+        self.accumulated_score += -score.item()
 
     def process_batch(self, batch: torch.Tensor) -> torch.Tensor:
         """Process the batch with the current state of blend, person and level."""

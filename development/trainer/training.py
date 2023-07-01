@@ -2,7 +2,8 @@
 from typing import List, Generator
 
 import torch
-from adabelief_pytorch import AdaBelief
+import torchvision
+from cv2 import cv2
 from torch.utils.data import DataLoader
 from torchmetrics import StructuralSimilarityIndexMeasure
 
@@ -120,5 +121,20 @@ class Trainer:
         )
 
 
-if __name__ == '__main__':
-    Trainer().train()
+class TrainVisualizer:
+    def __init__(self):
+        self.previews: List[torch.Tensor] = []
+        self.image = None
+
+    def add_image(self, image: torch.Tensor):
+        self.previews.append(image)
+
+    def show(self):
+        self.image = torchvision.utils.make_grid(self.previews, nrow=2)
+        self.image = self.image.permute(1, 2, 0).detach().cpu().numpy()
+        self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2BGR)
+        cv2.imshow("Deepfake Preview", self.image)
+        cv2.waitKey(200)
+
+    def clear(self):
+        self.previews = []

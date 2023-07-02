@@ -88,7 +88,7 @@ class Trainer:
 
         torch.save(
             self.model.state_dict(),
-            filepath / f"comb_model_{self.current_level}-{round(self.blend_rate, 2)}.pth",
+            filepath / f"comb_model_{self.current_level}-{round(self.current_blend, 2)}.pth",
         )
 
     def _increase_blend_and_level(self):

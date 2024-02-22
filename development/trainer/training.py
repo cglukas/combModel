@@ -22,8 +22,10 @@ class Trainer:
         show_preview=False,
         device="cpu",
         save_epochs=5,
+        max_level=8,
     ):
 
+        self.max_level = min(max_level, 8)
         self.dataloaders: List[DataLoader] = dataloaders
         self.show_preview = show_preview
         self.device = device
@@ -66,11 +68,12 @@ class Trainer:
         0 to 1."""
         self.epoch = 0
 
+        self.training = True
         self.visualizer = TrainVisualizer()
 
     def train(self):
         """Start the training process."""
-        while True:
+        while self.training:
             self.epoch += 1
             self.train_one_epoch()
             if self.epoch % self.save_epochs == 1:
@@ -101,8 +104,11 @@ class Trainer:
         if self.current_blend > 1:
             self.current_blend = 0
             self.current_level += 1
-        self.current_level = min(self.current_level, 8)
-        dataloader.SizeLoader.scale = dataloader.SCALES[self.current_level]
+        if self.current_level > self.max_level:
+            # Stop the training.
+            self.training = False
+
+        self.current_level = min(self.current_level, self.max_level)
 
     def train_one_epoch(self):
         """Train the model for one epoch.
@@ -141,6 +147,7 @@ class Trainer:
         until all samples of the longest dataset have been yielded once.
         Smaller datasets are repeated in this process.
         """
+        dataloader.SizeLoader.scale = dataloader.SCALES[self.current_level]
         batch_size = self.dataloaders[0].batch_size
         iterators = [iter(dataloader) for dataloader in self.dataloaders]
         for i in range(int(self._max_dataset_length / batch_size)):

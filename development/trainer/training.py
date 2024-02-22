@@ -136,14 +136,17 @@ class Trainer:
                 self.train_one_batch(single_sample)
                 last_images[person] = test_img
 
-        for person, img in last_images.items():
-            self.current_person = (person + 1) % len(samples)
-            self.visualizer.add_image(img)
-            swapped = self.process_batch(img.unsqueeze(dim=0))
-            self.visualizer.add_image(swapped.squeeze())
+        with torch.no_grad():
+            for person, img in last_images.items():
+                self.current_person = (person + 1) % 2
+                self.visualizer.add_image(img)
+                swapped = self.process_batch(img.unsqueeze(dim=0))
+                self.visualizer.add_image(swapped.squeeze())
         self.visualizer.show()
+
+        epoch_score = self.accumulated_score / i
         print(
-            f"Level {self.current_level} - {self.current_blend}, score: {self.accumulated_score/i}"
+            f"Level {self.current_level} - {self.current_blend}, rate: {self.blend_rate}, score: {epoch_score}"
         )
 
     def get_next_samples(self) -> Generator[List[torch.Tensor], None, None]:

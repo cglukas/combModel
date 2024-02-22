@@ -146,7 +146,7 @@ class Trainer:
 
         epoch_score = self.accumulated_score / i
         print(
-            f"Level {self.current_level} - {self.current_blend}, rate: {self.blend_rate}, score: {epoch_score}"
+            f"Time: {datetime.now().strftime('%H:%M:%S')}, Level {self.current_level} - {self.current_blend}, rate: {self.blend_rate}, score: {epoch_score}"
         )
 
     def get_next_samples(self) -> Generator[List[torch.Tensor], None, None]:

@@ -18,6 +18,8 @@ class Trainer:
 
     def __init__(
         self,
+        model: CombModel,
+        optimizer,
         dataloaders: List[DataLoader],
         show_preview=False,
         device="cpu",
@@ -37,12 +39,10 @@ class Trainer:
         self.accumulated_score: float = 0.0
         """The accumulated score of all training steps in one epoch. To get a measure 
         of the model performance divide this with the samples of the epoch."""
-        self.model = CombModel(persons=len(dataloaders), device=self.device)
-        self.model.to(device)
+        self.model = model
         """The model to train."""
-        self.optimizer = torch.optim.SGD(
-            self.model.parameters(), lr=1e-3, momentum=0.001
-        )
+        self.model.to(device)
+        self.optimizer: torch.optim.optimizer.Optimizer = optimizer
 
         self.metric = StructuralSimilarityIndexMeasure()
         """The metric of the training needs to create a score. This means it needs to 
@@ -91,7 +91,13 @@ class Trainer:
 
         torch.save(
             self.model.state_dict(),
-            filepath / f"comb_model_{self.current_level}-{round(self.current_blend, 2)}.pth",
+            filepath
+            / f"comb_model_{self.current_level}-{round(self.current_blend, 1)}.pth",
+        )
+        torch.save(
+            self.optimizer.state_dict(),
+            filepath
+            / f"comb_model_optim_{self.current_level}-{round(self.current_blend, 1)}.pth",
         )
 
     def _increase_blend_and_level(self):

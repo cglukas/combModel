@@ -236,18 +236,6 @@ class CombModel(nn.Module):
             self.latent, level, last_lvl_influence=last_level_influence
         )
 
-    def eval(self: T) -> T:
-        self.encoder.eval()
-        for decoder in self.decoders:
-            decoder.eval()
-        return super().eval()
-
-    def train(self: T, mode: bool = True) -> T:
-        self.encoder.train(mode)
-        for decoder in self.decoders:
-            decoder.train(mode)
-        return super().train(mode)
-
 
 if __name__ == "__main__":
     enc = Encoder()

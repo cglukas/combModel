@@ -10,6 +10,14 @@ OUTPUT_FOLDER = Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocesse
 
 
 def preprocess(folder: Path):
+    """Copy and scale the images of the folder to the data/preprocessed folder.
+
+    This function will copy all images in the provided folder.
+    While copying, it will also create scaled versions of the images.
+
+    Args:
+        folder: source folder containing training images.
+    """
     print(f"Using '{folder}'")
     all_images = list(folder.iterdir())
     output_folder = OUTPUT_FOLDER / folder.name

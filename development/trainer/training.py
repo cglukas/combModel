@@ -34,8 +34,8 @@ class TrainLogger:
         wandb.log(
             {
                 "score": score,
-                "level": level,
-                "blend": blend,
+                "level": level + blend,
+                "blend_rate": blend_rate,
                 "epoch": epoch,
             }
         )

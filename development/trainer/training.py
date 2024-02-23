@@ -1,7 +1,7 @@
 """Training utilities to run trainings with different configurations."""
 from datetime import datetime
 from pathlib import Path
-from typing import List, Generator
+from typing import Iterator, List
 
 import torch
 import torchvision
@@ -15,6 +15,8 @@ from development.model.comb_model import CombModel
 
 
 class TrainLogger:
+    """Log progress on the terminal and at wandb.ai"""
+
     def __init__(self, learning_rate: float, blend_rate: float, optimizer: str):
         wandb.init(project="compmodel", entity="cglukas")
         wandb.config.update(
@@ -25,9 +27,17 @@ class TrainLogger:
             }
         )
 
-    def log(
-        self, level: int, blend: float, blend_rate: float, score: float, epoch: int
-    ):
+    @staticmethod
+    def log(level: int, blend: float, blend_rate: float, score: float, epoch: int):
+        """Log a datapoint.
+
+        Args:
+            level: Current level of the training.
+            blend: Current blend factor.
+            blend_rate: Rate at which blending is happening.
+            score: Current score of the network.
+            epoch: Current epoch of teh training.
+        """
         print(
             f"Time: {datetime.now().strftime('%H:%M:%S')}, Level {level} - {blend}, rate: {blend_rate}, score: {score}"
         )
@@ -40,7 +50,18 @@ class TrainLogger:
             }
         )
 
-    def log_image(self, image, epoch):
+    @staticmethod
+    def log_image(image: torch.Tensor | wandb.Image, epoch: int):
+        """Add an image to wandb.ai for the current epoch.
+
+        Note:
+            Don't spam this method as wandb will complain about large traffic.
+
+        Args:
+            image: Image to store.
+            epoch: Current epoch that will be used for associating the image with
+                   the model progress.
+        """
         wandb.log(
             {
                 "epoch": epoch,
@@ -118,6 +139,14 @@ class Trainer:
             self._increase_blend_and_level()
 
     def save(self):
+        """Save the model and optimizer.
+
+        This will save the model and optimizer state dicts to a file.
+        The filename will contain information about level and blend
+        for continuing the training.
+
+        Additionally, this method logs the current image of the visualizer.
+        """
         filepath = (
             Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings")
             / f"{self.train_start}"
@@ -193,7 +222,7 @@ class Trainer:
 
     def get_next_samples(
         self,
-    ) -> Generator[List[tuple[torch.Tensor, torch.Tensor]], None, None]:
+    ) -> Iterator[List[tuple[torch.Tensor, torch.Tensor]]]:
         """Get the next samples of the dataloaders.
 
         This will iterate over all dataloaders and yield the samples of them
@@ -203,7 +232,7 @@ class Trainer:
         dataloader.SizeLoader.scale = dataloader.SCALES[self.current_level]
         batch_size = self.dataloaders[0].batch_size
         iterators = [iter(loader) for loader in self.dataloaders]
-        for i in range(int(self._max_dataset_length / batch_size)):
+        for _ in range(int(self._max_dataset_length / batch_size)):
             output = []
 
             for j, _iter in enumerate(iterators):
@@ -239,7 +268,7 @@ class Trainer:
         if batch.shape[-1] < 16:
             batch = torch.nn.functional.interpolate(batch, (16, 16))
             inferred = torch.nn.functional.interpolate(inferred, (16, 16))
-        score: torch.Tensor = -self.metric(inferred, batch)
+        score: torch.Tensor = -1 * self.metric(inferred, batch)
         score.backward()
         self.optimizer.step()
         self.accumulated_score += -score.item()
@@ -255,23 +284,47 @@ class Trainer:
 
 
 class TrainVisualizer:
+    """Visualizer for collecting and showing intermediate training results."""
+
     def __init__(self):
         self.previews: List[torch.Tensor] = []
         self.image = None
 
     def add_image(self, image: torch.Tensor):
+        """Add a single image.
+
+        Calling this method alternately with the source and processed image
+        will result in a grid where on one side the source images are and
+        on the other side the processed images.
+
+        Args:
+            image: image to display. Size of the image must be the same like
+                   already added images. If other sized images neeed to be
+                   displayed, call `clear` before that.
+        """
         self.previews.append(image)
 
     def add_batches(self, source: torch.Tensor, processed: torch.Tensor):
+        """Add a full batch of images.
+
+        Source and processed images need to be of the same size and batch
+        sizes need to be the same.
+
+        Args:
+            source: Batch of source images (will be on the left side of the grid).
+            processed: Batch of processed images (will be on the right side of the grid).
+        """
         for src, prev in zip(source, processed):
             self.previews.append(src)
             self.previews.append(prev)
 
     def show(self):
+        """Display the previews in a new window."""
         self.image = torchvision.utils.make_grid(self.previews, nrow=2)
         self.image = self.image.permute(1, 2, 0).detach().cpu().numpy()
         cv2.imshow("Deepfake Preview", cv2.cvtColor(self.image, cv2.COLOR_RGB2BGR))
         cv2.waitKey(200)
 
     def clear(self):
+        """Clear the loaded previews."""
         self.previews = []

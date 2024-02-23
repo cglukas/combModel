@@ -3,6 +3,7 @@ from pathlib import Path
 
 import cv2
 import torch.cuda
+import wandb
 from torch.utils.data import DataLoader
 
 from development.data_io import dataloader
@@ -80,6 +81,7 @@ def main():
     )
     trainer.blend_rate = blend_rate
     trainer.train()
+    wandb.finish()
 
 
 def validate(model_state_dict: Path | str):

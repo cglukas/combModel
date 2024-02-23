@@ -40,6 +40,14 @@ class TrainLogger:
             }
         )
 
+    def log_image(self, image, epoch):
+        wandb.log(
+            {
+                "epoch": epoch,
+                "image": wandb.Image(image, caption="Reconstruction of model"),
+            }
+        )
+
 
 class Trainer:
     """Training object to train a model."""
@@ -117,7 +125,7 @@ class Trainer:
         if not filepath.exists():
             print(f"{filepath} created")
             filepath.mkdir(exist_ok=True)
-
+        self.logger.log_image(self.visualizer.image, self.epoch)
         torch.save(
             self.model.state_dict(),
             filepath
@@ -262,8 +270,7 @@ class TrainVisualizer:
     def show(self):
         self.image = torchvision.utils.make_grid(self.previews, nrow=2)
         self.image = self.image.permute(1, 2, 0).detach().cpu().numpy()
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2BGR)
-        cv2.imshow("Deepfake Preview", self.image)
+        cv2.imshow("Deepfake Preview", cv2.cvtColor(self.image, cv2.COLOR_RGB2BGR))
         cv2.waitKey(200)
 
     def clear(self):

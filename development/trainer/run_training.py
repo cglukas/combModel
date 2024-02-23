@@ -1,3 +1,4 @@
+"""Module for training and validating the model."""
 import re
 from pathlib import Path
 
@@ -47,6 +48,7 @@ def _get_loaders(batch_size: int) -> list[DataLoader]:
 
 
 def get_generic() -> DataLoader:
+    """Get a dataloader for the general human faces dataset."""
     return DataLoader(
         PersonDataset(
             Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
@@ -57,6 +59,7 @@ def get_generic() -> DataLoader:
 
 
 def main():
+    """Main training routine."""
     ### Hyper parameter
     learning_rate = 10e-4  # 10e-4 is used from the disney research paper.
     blend_rate = 0.05
@@ -76,7 +79,7 @@ def main():
         optimizer=optimizer,
         dataloaders=loaders,
         device=device,
-        max_level=2,
+        max_level=5,
         logger=logger
     )
     trainer.blend_rate = blend_rate
@@ -84,7 +87,12 @@ def main():
     wandb.finish()
 
 
-def validate(model_state_dict: Path | str):
+def validate(model_state_dict: Path | str) -> None:
+    """Load the model and process a sample batch and display it for visual validation.
+
+    Args:
+        model_state_dict: path to the state dict of the trained model.
+    """
     match = re.match(r".*_(?P<level>\d)-(?P<blend>\d\.\d)\.pth", str(model_state_dict))
     level = int(match.group("level"))
     blend = float(match.group("blend"))
@@ -99,8 +107,7 @@ def validate(model_state_dict: Path | str):
     visualizer = TrainVisualizer()
     for person, loader in enumerate(loaders):
         for sample in loader:
-            image, mask = sample
-            image = image
+            image, _ = sample
             image = image.to(device)
             with torch.no_grad():
                 processed = model.progressive_forward(
@@ -114,4 +121,7 @@ def validate(model_state_dict: Path | str):
 
 if __name__ == "__main__":
     main()
-    # validate(r"C:\Users\Lukas\PycharmProjects\combModel\trainings\05-07-23_08_49\comb_model_1-1.0.pth")
+
+    validate(
+        r"C:\Users\Lukas\PycharmProjects\combModel\trainings\23-02-24_11_30\comb_model_2-0.8.pth"
+    )

@@ -181,7 +181,7 @@ class Trainer:
                 self.visualizer.add_image(swapped.squeeze())
         self.visualizer.show()
 
-        epoch_score = self.accumulated_score / i
+        epoch_score = self.accumulated_score / i / len(self.dataloaders)
         if self.logger:
             self.logger.log(
                 level=self.current_level,

@@ -215,6 +215,11 @@ class TrainVisualizer:
     def add_image(self, image: torch.Tensor):
         self.previews.append(image)
 
+    def add_batches(self, source: torch.Tensor, processed: torch.Tensor):
+        for src, prev in zip(source, processed):
+            self.previews.append(src)
+            self.previews.append(prev)
+
     def show(self):
         self.image = torchvision.utils.make_grid(self.previews, nrow=2)
         self.image = self.image.permute(1, 2, 0).detach().cpu().numpy()

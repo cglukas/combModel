@@ -77,22 +77,29 @@ def main():
 
 
 def validate(model_state_dict: Path | str):
-
-    re.match(r".*_(?P<level>\d)-(?P<blend>\d\.\d)\.pth", str(model_state_dict))
-    loaders = _get_loaders(batch_size=2)
-    loaders = [loaders[2], loaders[2]]
+    match = re.match(r".*_(?P<level>\d)-(?P<blend>\d\.\d)\.pth", str(model_state_dict))
+    level = int(match.group("level"))
+    blend = float(match.group("blend"))
+    loaders = [get_generic(), get_generic()]
+    dataloader.SizeLoader.scale = dataloader.SCALES[level]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CombModel(persons=len(loaders), device=device)
+    model.eval()
     model.to(device)
-    model.load_state_dict(torch.load(model_state_dict))
+    state_dict = torch.load(model_state_dict)
+    model.load_state_dict(state_dict)
     visualizer = TrainVisualizer()
     for person, loader in enumerate(loaders):
-        for image in loader:
-            visualizer.add_image(image)
-            processed = model.progressive_forward(
-                person=person, batch=image, level=level, last_level_influence=blend
-            )
-            visualizer.add_image(processed)
+        for sample in loader:
+            image, mask = sample
+            image = image
+            image = image.to(device)
+            with torch.no_grad():
+                processed = model.progressive_forward(
+                    person=person, batch=image, level=level, last_level_influence=blend
+                )
+            visualizer.add_batches(image, processed)
+            break
     visualizer.show()
     cv2.waitKey(0)
 

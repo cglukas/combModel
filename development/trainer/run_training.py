@@ -5,10 +5,11 @@ import cv2
 import torch.cuda
 from torch.utils.data import DataLoader
 
+from development.data_io import dataloader
 from development.data_io.dataloader import SizeLoader
 from development.data_io.dataloader2 import PersonDataset
 from development.model.comb_model import CombModel
-from development.trainer.training import TrainVisualizer, Trainer
+from development.trainer.training import TrainLogger, TrainVisualizer, Trainer
 
 
 def _get_loaders(batch_size: int) -> list[DataLoader]:
@@ -55,24 +56,29 @@ def get_generic() -> DataLoader:
 
 
 def main():
-    loaders = _get_loaders(batch_size=8)
+    ### Hyper parameter
+    learning_rate = 10e-4  # 10e-4 is used from the disney research paper.
+    blend_rate = 0.05
+
     loaders = [get_generic(), get_generic()]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CombModel(persons=len(loaders), device=device)
     model.to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=10e-4, momentum=0.9)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=10e-4)
 
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+
+    logger = TrainLogger(
+        learning_rate=learning_rate, blend_rate=blend_rate, optimizer=str(type(optimizer))
+    )
     trainer = Trainer(
         model=model,
         optimizer=optimizer,
         dataloaders=loaders,
         device=device,
         max_level=2,
+        logger=logger
     )
-    trainer.blend_rate = 10e-4
-    # trainer.current_level = 2
-    # trainer.current_blend = 0.2
+    trainer.blend_rate = blend_rate
     trainer.train()
 
 

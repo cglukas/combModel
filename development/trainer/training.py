@@ -5,12 +5,40 @@ from typing import List, Generator
 
 import torch
 import torchvision
+import wandb
 from cv2 import cv2
 from torch.utils.data import DataLoader
 from torchmetrics import StructuralSimilarityIndexMeasure
 
 from development.data_io import dataloader
 from development.model.comb_model import CombModel
+
+
+class TrainLogger:
+    def __init__(self, learning_rate: float, blend_rate: float, optimizer: str):
+        wandb.init(project="compmodel", entity="cglukas")
+        wandb.config.update(
+            {
+                "learning_rate": learning_rate,
+                "blend_rate": blend_rate,
+                "optimizer": optimizer,
+            }
+        )
+
+    def log(
+        self, level: int, blend: float, blend_rate: float, score: float, epoch: int
+    ):
+        print(
+            f"Time: {datetime.now().strftime('%H:%M:%S')}, Level {level} - {blend}, rate: {blend_rate}, score: {score}"
+        )
+        wandb.log(
+            {
+                "score": score,
+                "level": level,
+                "blend": blend,
+                "epoch": epoch,
+            }
+        )
 
 
 class Trainer:
@@ -25,8 +53,8 @@ class Trainer:
         device="cpu",
         save_epochs=5,
         max_level=8,
+        logger: TrainLogger = None,
     ):
-
         self.max_level = min(max_level, 8)
         self.dataloaders: List[DataLoader] = dataloaders
         self.show_preview = show_preview
@@ -70,6 +98,7 @@ class Trainer:
 
         self.training = True
         self.visualizer = TrainVisualizer()
+        self.logger = logger
 
     def train(self):
         """Start the training process."""
@@ -145,11 +174,18 @@ class Trainer:
         self.visualizer.show()
 
         epoch_score = self.accumulated_score / i
-        print(
-            f"Time: {datetime.now().strftime('%H:%M:%S')}, Level {self.current_level} - {self.current_blend}, rate: {self.blend_rate}, score: {epoch_score}"
-        )
+        if self.logger:
+            self.logger.log(
+                level=self.current_level,
+                blend=self.current_blend,
+                blend_rate=self.blend_rate,
+                score=epoch_score,
+                epoch=self.epoch,
+            )
 
-    def get_next_samples(self) -> Generator[List[tuple[torch.Tensor, torch.Tensor]], None, None]:
+    def get_next_samples(
+        self,
+    ) -> Generator[List[tuple[torch.Tensor, torch.Tensor]], None, None]:
         """Get the next samples of the dataloaders.
 
         This will iterate over all dataloaders and yield the samples of them

@@ -228,10 +228,10 @@ class CombModel(nn.Module):
             self.decoders.append(decoder)
 
     def progressive_forward(
-        self, person: int, tensor: torch.Tensor, level: int, last_level_influence: float
+        self, person: int, batch: torch.Tensor, level: int, last_level_influence: float
     ):
         decoder = self.decoders[person]
-        self.latent = self.encoder.progressive_forward(tensor, level, last_lvl_influence=last_level_influence)
+        self.latent = self.encoder.progressive_forward(batch, level, last_lvl_influence=last_level_influence)
         return decoder.progressive_forward(
             self.latent, level, last_lvl_influence=last_level_influence
         )

@@ -92,7 +92,7 @@ def validate(model_state_dict: Path | str):
         for image in loader:
             visualizer.add_image(image)
             processed = model.progressive_forward(
-                person=person, tensor=image, level=level, last_level_influence=blend
+                person=person, batch=image, level=level, last_level_influence=blend
             )
             visualizer.add_image(processed)
     visualizer.show()

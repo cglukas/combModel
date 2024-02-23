@@ -201,7 +201,7 @@ class Trainer:
         """Process the batch with the current state of blend, person and level."""
         return self.model.progressive_forward(
             person=self.current_person,
-            tensor=batch,
+            batch=batch,
             level=self.current_level,
             last_level_influence=self.current_blend,
         )

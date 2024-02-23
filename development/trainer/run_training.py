@@ -6,6 +6,7 @@ import torch.cuda
 from torch.utils.data import DataLoader
 
 from development.data_io.dataloader import SizeLoader
+from development.data_io.dataloader2 import PersonDataset
 from development.model.comb_model import CombModel
 from development.trainer.training import TrainVisualizer, Trainer
 
@@ -45,10 +46,8 @@ def _get_loaders(batch_size: int) -> list[DataLoader]:
 
 def get_generic() -> DataLoader:
     return DataLoader(
-        SizeLoader(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-            max_persons=5,
-            person=4,
+        PersonDataset(
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
         ),
         batch_size=8,
         shuffle=True,
@@ -57,8 +56,7 @@ def get_generic() -> DataLoader:
 
 def main():
     loaders = _get_loaders(batch_size=8)
-    generic = get_generic()
-    loaders = [generic, generic]
+    loaders = [get_generic(), get_generic()]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CombModel(persons=len(loaders), device=device)
     model.to(device)

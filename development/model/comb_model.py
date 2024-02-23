@@ -220,7 +220,7 @@ class CombModel(nn.Module):
         super(CombModel, self).__init__()
         self.encoder = Encoder()
         self.encoder.to(device)
-        self.decoders = []
+        self.decoders = nn.ModuleList()
         self.latent: torch.Tensor
         for person in range(persons):
             decoder = Decoder()

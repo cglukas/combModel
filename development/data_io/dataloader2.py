@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+from functools import lru_cache
 from pathlib import Path
 
 import PIL.Image
@@ -50,31 +51,33 @@ class PersonDataset(Dataset):
         """Set the scale that should be loaded."""
         self._scale = scale
 
-    def _get_images_for_scale(self) -> list[Path]:
+    @lru_cache
+    def _get_images_for_scale(self,  scale: IMAGE_SIZE) -> list[Path]:
         """Get all image files for the required image scale.
 
         Returns:
             list of found images.
         """
-        scale_folder = self._folder / f"scale_{self._scale.value}"
+        scale_folder = self._folder / f"scale_{scale.value}"
         if not scale_folder.exists() or not scale_folder.is_dir():
             raise OSError(f"Can't find the folder: '{scale_folder}'")
         return list(scale_folder.iterdir())
 
-    def _get_mattes_for_scale(self) -> list[Path]:
+    @lru_cache
+    def _get_mattes_for_scale(self, scale: IMAGE_SIZE) -> list[Path]:
         """Get all matte files for the required image scale.
 
         Returns:
             list of found images.
         """
-        scale_folder = self._folder / f"scale_{self._scale.value}_matte"
+        scale_folder = self._folder / f"scale_{scale.value}_matte"
         if not scale_folder.exists() or not scale_folder.is_dir():
             return []
         return list(scale_folder.iterdir())
 
     def __len__(self):
         """Length of the dataset sampled from the current image scale folder."""
-        return len(self._get_images_for_scale())
+        return len(self._get_images_for_scale(self._scale))
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
         """Get a single image of the dataset as a tensor.
@@ -85,10 +88,10 @@ class PersonDataset(Dataset):
         Returns:
             Tensor of the loaded image.
         """
-        img_files = self._get_images_for_scale()
+        img_files = self._get_images_for_scale(self._scale)
         img_path = img_files[index]
         img = PIL.Image.open(str(img_path))
-        matte_files = self._get_mattes_for_scale()
+        matte_files = self._get_mattes_for_scale(self._scale)
         transformed_img = self._transforms(img)
         if matte_files:
             matte_path = matte_files[index]

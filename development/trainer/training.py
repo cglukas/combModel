@@ -131,7 +131,7 @@ class Trainer:
 
             for person, single_sample in enumerate(samples):
                 self.current_person = person
-                test_img = single_sample[0]
+                test_img = single_sample[0][0]
                 self.visualizer.add_image(test_img)
                 self.train_one_batch(single_sample)
                 last_images[person] = test_img
@@ -149,7 +149,7 @@ class Trainer:
             f"Time: {datetime.now().strftime('%H:%M:%S')}, Level {self.current_level} - {self.current_blend}, rate: {self.blend_rate}, score: {epoch_score}"
         )
 
-    def get_next_samples(self) -> Generator[List[torch.Tensor], None, None]:
+    def get_next_samples(self) -> Generator[List[tuple[torch.Tensor, torch.Tensor]], None, None]:
         """Get the next samples of the dataloaders.
 
         This will iterate over all dataloaders and yield the samples of them
@@ -158,7 +158,7 @@ class Trainer:
         """
         dataloader.SizeLoader.scale = dataloader.SCALES[self.current_level]
         batch_size = self.dataloaders[0].batch_size
-        iterators = [iter(dataloader) for dataloader in self.dataloaders]
+        iterators = [iter(loader) for loader in self.dataloaders]
         for i in range(int(self._max_dataset_length / batch_size)):
             output = []
 
@@ -170,11 +170,11 @@ class Trainer:
                     iterators[j] = _iter
                     # Reinitialize smaller dataloaders
                     sample = next(_iter)
-                sample = sample.to(self.device)
+                sample = sample[0].to(self.device), sample[1].to(self.device)
                 output.append(sample)
             yield output
 
-    def train_one_batch(self, batch: torch.Tensor):
+    def train_one_batch(self, batch: tuple[torch.Tensor, torch.Tensor]):
         """Train one batch and perform backpropagation on it.
 
         This will process the batch with the model. The fields `current_person`,
@@ -184,11 +184,14 @@ class Trainer:
         perform one backward step on the model.
 
         Args:
-            batch: current batch of data (shape [batchsize, channels, width, height])
+            batch: batch of images and masks (tensor shapes [batchsize, channels, width, height])
         """
         self.optimizer.zero_grad()
+        batch, mask = batch
         inferred = self.process_batch(batch)
+        inferred = inferred * mask
         self.visualizer.add_image(inferred[0])
+        batch = batch * mask
         if batch.shape[-1] < 16:
             batch = torch.nn.functional.interpolate(batch, (16, 16))
             inferred = torch.nn.functional.interpolate(inferred, (16, 16))

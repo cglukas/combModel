@@ -1,3 +1,4 @@
+"""Module for the person dataset loader."""
 from __future__ import annotations
 import enum
 from functools import lru_cache
@@ -11,34 +12,29 @@ from torch.utils.data import Dataset
 from development.data_io.dataloader import SizeLoader
 
 
-class IMAGE_SIZE(enum.IntEnum):
-    Level0 = 4
-    Level1 = 8
-    Level2 = 16
-    Level3 = 32
-    Level4 = 64
-    Level5 = 128
-    Level6 = 256
-    Level7 = 512
-    Level8 = 512
+class ImageSize(enum.IntEnum):
+    """All possible image sizes for the comb model levels."""
+
+    LEVEL0 = 4
+    LEVEL1 = 8
+    LEVEL2 = 16
+    LEVEL3 = 32
+    LEVEL4 = 64
+    LEVEL5 = 128
+    LEVEL6 = 256
+    LEVEL7 = 512
+    LEVEL8 = 1024
 
     @classmethod
-    def from_index(cls, index) -> IMAGE_SIZE:
-        all_levels = [
-            cls.Level0,
-            cls.Level1,
-            cls.Level2,
-            cls.Level3,
-            cls.Level4,
-            cls.Level5,
-            cls.Level6,
-            cls.Level7,
-            cls.Level8,
-        ]
+    def from_index(cls, index) -> ImageSize:
+        """Get the enum for the level index."""
+        all_levels = list(cls)
         return all_levels[index]
 
 
 class PersonDataset(Dataset):
+    """Dataset for loading a single person dataset for the comb model."""
+
     def __init__(self, folder: str | Path):
         """Initialize the PersonDataset.
 
@@ -47,14 +43,14 @@ class PersonDataset(Dataset):
         """
         self._folder = Path(folder)
         self._transforms = torchvision.transforms.ToTensor()
-        self._scale = IMAGE_SIZE.Level0
+        self._scale = ImageSize.LEVEL0
 
-    def set_scale(self, scale: IMAGE_SIZE) -> None:
+    def set_scale(self, scale: ImageSize) -> None:
         """Set the scale that should be loaded."""
         self._scale = scale
 
     @lru_cache
-    def _get_images_for_scale(self,  scale: IMAGE_SIZE) -> list[Path]:
+    def _get_images_for_scale(self, scale: ImageSize) -> list[Path]:
         """Get all image files for the required image scale.
 
         Returns:
@@ -66,7 +62,7 @@ class PersonDataset(Dataset):
         return list(scale_folder.iterdir())
 
     @lru_cache
-    def _get_mattes_for_scale(self, scale: IMAGE_SIZE) -> list[Path]:
+    def _get_mattes_for_scale(self, scale: ImageSize) -> list[Path]:
         """Get all matte files for the required image scale.
 
         Returns:
@@ -91,7 +87,7 @@ class PersonDataset(Dataset):
             Tensor of the loaded image.
         """
         # TODO remove this once the scale setting is implemented
-        self._scale = IMAGE_SIZE(SizeLoader.scale)
+        self._scale = ImageSize(SizeLoader.scale)
 
         img_files = self._get_images_for_scale(self._scale)
         img_path = img_files[index]

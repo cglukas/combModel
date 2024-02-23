@@ -5,13 +5,13 @@ import pytest
 import torch
 import torchvision.io
 
-from development.data_io.dataloader2 import IMAGE_SIZE, PersonDataset
+from development.data_io.dataloader2 import ImageSize, PersonDataset
 
 
-class TestIMAGE_SIZE:
+class TestImageSize:
     def test_init_from_number(self):
-        assert IMAGE_SIZE.from_index(0) == IMAGE_SIZE.Level0
-        assert IMAGE_SIZE.from_index(8) == IMAGE_SIZE.Level8
+        assert ImageSize.from_index(0) == ImageSize.LEVEL0
+        assert ImageSize.from_index(8) == ImageSize.LEVEL8
 
 
 class TestPersonDataset:

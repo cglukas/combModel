@@ -11,6 +11,7 @@ from facenet_pytorch import MTCNN
 
 
 class Extractor:
+    """Tool to extract faces from images."""
     def __init__(self):
         self.export_path = Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\extracted")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -27,6 +28,11 @@ class Extractor:
         self.image_size = 1024
 
     def extract(self, filepath: Union[str, Path]):
+        """Extract all faces from the folder.
+
+        Args:
+            filepath: folder containing jpg files.
+        """
         filepath = Path(filepath)
         all_jpgs = list(filepath.glob("*.jpg"))
 
@@ -40,9 +46,17 @@ class Extractor:
                 cv2.waitKey(10)
                 cv2.imwrite(str(export_file), img)
 
-    def extract_single(self, jpg: Path) -> list:
+    def extract_single(self, jpg: Path) -> list[np.ndarray]:
+        """Extract all faces from the image.
+
+        Args:
+            jpg: path to a jpg image.
+
+        Returns:
+            list of extracted faces.
+        """
         img = PIL.Image.open(str(jpg)).convert("RGB")
-        bounding_boxes, confidence, landmarks = self.model.detect(img, landmarks=True)
+        _, _, landmarks = self.model.detect(img, landmarks=True)
         images = []
         if landmarks is None:
             return images

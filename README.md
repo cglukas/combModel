@@ -29,5 +29,21 @@ The mask is applied after the model forward process so that the optimizer only f
 ## Training results
 **TODO** Here will be some training results.
 
+### Goal of the training
+In order to produce deepfakes we need a network that will map multiple identities to the same latent space.
+This makes it possible to input an image of person A and produce a similar looking image of person B (orientation & expression).
+The utility `latent_debug.py` can be used to visualize the latent space of a trained network.
+Ideally the latent space will look similar to the image below:
+![Latent Space](img/LatentSpaceVisualization.png)
+
+Here the (reduced) latent encodings are overlapping strongly. 
+This makes it possible to switch identities for almost all input data.
+
+If the overlapping is only partial, then some input images might not work.
+You can back trace the latent encoding to the input images in order to get an image of the missing data.
+Sometimes it can help to add similar images to the other datasets and re-train.
+
+_Feature Proposal:_
+If you are interested (or if I have some spare time) you can develop an interactive tool to show images that are missing in the encoding of other identities.
 # Try yourself
 **TODO** One the training reproduces consistent results and _all_ the bugs are gone, I will write a short summary on how to test and train this comb model yourself.

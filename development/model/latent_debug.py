@@ -6,47 +6,69 @@ from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
 from development.data_io.dataloader import SCALES, SizeLoader
+from development.data_io.dataloader2 import ImageSize, PersonDataset
 from development.model.comb_model import CombModel
 
 
-def main():
-    level = 2
-    filepath = r"C:\Users\Lukas\PycharmProjects\combModel\code\trainer\230210_213807\model2_1.pth"
+def display_latent_encoding(
+    model_path: str, datasets: list[PersonDataset], level: int, max_samples: int = -1
+):
+    """Display the latent space of the model for the samples of the datasets.
 
+    Notes:
+        You can process datasets with non-matching sizes by setting the max_samples to the size of the smallest dataset.
+
+    Args:
+        model_path: path to the comb model checkpoint.
+        datasets: list of datasets. All datasets need to be of the same size.
+        level: model level that should be used for processing.
+        max_samples: maximum of samples to process. Default -1 will use all samples of dataset.
+    """
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    max_persons = 2
-    loarder_a = SizeLoader(
-        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-        max_persons=max_persons,
-        person=0,
-    )
-    loarder_b = SizeLoader(
-        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-        max_persons=max_persons,
-        person=1,
-    )
+
+    # TODO remove once PersonLoader has no dependencies to this anymore.
     SizeLoader.scale = SCALES[level]
+
     model = CombModel(device=device, persons=2)
-    model.load_state_dict(torch.load(filepath))
+    model.load_state_dict(torch.load(model_path))
     model.to(device)
-    latents = [torch.zeros(1,512, 1, 1)]*2
-    for a, b in zip(loarder_a, loarder_b):
-        a, b = a[None, :].to(device), b[None, :].to(device)
 
-        for person in range(max_persons):
-            person_image = a if person else b
-            model.progressive_forward(person, person_image, level, 1)
-            latents[person] = torch.cat((latents[person], model.latent.detach().cpu()), 0)
-        break
+    # Algorithm to reduce dimensionality of latent vectors.
+    # This will produce 2D points for plotting.
+    tsne = TSNE(2)
+    _, ax = plt.subplots()
+    for person, loader in enumerate(datasets):
+        loader.set_scale(ImageSize.from_index(level))
+        latents = []
+        for index, (sample, _) in enumerate(loader):
+            # Second part of loader will be the mask. This is only necessary for training.
+            batch = sample[None, :]
 
-    tsne = TSNE(2, verbose=4)
-    all_latents = torch.cat((latents[0], latents[1]), 0)
-    print(latents[0].shape)
-    squeeze = all_latents.squeeze()
-    print(squeeze.shape)
-    tsne_proj = tsne.fit_transform(squeeze)
-    fig, ax = plt.subplot(nrow=1)
+            model.progressive_forward(
+                person, batch.to(device), level, last_level_influence=1
+            )
+            latents.append(model.latent.detach().cpu())
+            if max_samples != -1 and index > max_samples:
+                break
+
+        latent_2d = tsne.fit_transform(torch.cat(latents).squeeze())
+        ax.scatter(*zip(*latent_2d), alpha=0.5, label=f"Person {person}")
+
+    ax.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    display_latent_encoding(
+        model_path=r"C:\Users\Lukas\PycharmProjects\combModel\trainings\27-02-24_19_05\comb_model_2-0.8.pth",
+        datasets=[
+            PersonDataset(
+                Path(
+                    r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"
+                ),
+            )
+        ]
+        * 2,
+        level=1,
+        max_samples=1000,
+    )

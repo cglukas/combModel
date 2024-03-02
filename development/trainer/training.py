@@ -17,15 +17,18 @@ from development.model.comb_model import CombModel
 class TrainLogger:
     """Log progress on the terminal and at wandb.ai"""
 
-    def __init__(self, learning_rate: float, blend_rate: float, optimizer: str):
-        wandb.init(project="compmodel", entity="cglukas")
-        wandb.config.update(
-            {
-                "learning_rate": learning_rate,
-                "blend_rate": blend_rate,
-                "optimizer": optimizer,
-            }
-        )
+    def __init__(self, learning_rate: float, blend_rate: float, optimizer: str, continue_id: str = ""):
+        if not continue_id:
+            wandb.init(project="compmodel", entity="cglukas")
+            wandb.config.update(
+                {
+                    "learning_rate": learning_rate,
+                    "blend_rate": blend_rate,
+                    "optimizer": optimizer,
+                }
+            )
+        else:
+            wandb.init(project="compmodel", entity="cglukas", resume="must", id=continue_id)
 
     @staticmethod
     def log(level: int, blend: float, blend_rate: float, score: float, epoch: int):

@@ -127,6 +127,7 @@ class Trainer:
         """The current influence of the next layer of the model. The allowed range is from
         0 to 1."""
         self.epoch = 0
+        self.epoch_score = 0
 
         self.training = True
         self.visualizer = TrainVisualizer()
@@ -207,19 +208,19 @@ class Trainer:
 
         with torch.no_grad():
             for person, img in last_images.items():
-                self.current_person = (person + 1) % 2
+                self.current_person = (person + 1) % len(self.dataloaders)
                 self.visualizer.add_image(img)
                 swapped = self.process_batch(img.unsqueeze(dim=0))
                 self.visualizer.add_image(swapped.squeeze())
         self.visualizer.show()
 
-        epoch_score = self.accumulated_score / i / len(self.dataloaders)
+        self.epoch_score = self.accumulated_score / i / len(self.dataloaders)
         if self.logger:
             self.logger.log(
                 level=self.current_level,
                 blend=self.current_blend,
                 blend_rate=self.blend_rate,
-                score=epoch_score,
+                score=self.epoch_score,
                 epoch=self.epoch,
             )
 

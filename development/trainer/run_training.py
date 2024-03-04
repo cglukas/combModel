@@ -61,14 +61,26 @@ def get_generic() -> DataLoader:
 def main():
     """Main training routine."""
     ### Hyper parameter
-    learning_rate = 10e-4  # 10e-4 is used from the disney research paper.
+    learning_rate = 10e-4  # 10e-4 is used in the disney research paper.
     blend_rate = 0.05
-
-    loaders = [get_generic(), get_generic()]
+    bruce = DataLoader(
+        PersonDataset(
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
+        ),
+        batch_size=8,
+        shuffle=True,
+    )
+    michael = DataLoader(
+        PersonDataset(
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
+        ),
+        batch_size=8,
+        shuffle=True,
+    )
+    loaders = [bruce, michael]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CombModel(persons=len(loaders), device=device)
     model.to(device)
-
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
     logger = TrainLogger(
@@ -79,7 +91,7 @@ def main():
         optimizer=optimizer,
         dataloaders=loaders,
         device=device,
-        max_level=5,
+        max_level=4,
         logger=logger
     )
     trainer.blend_rate = blend_rate
@@ -121,7 +133,3 @@ def validate(model_state_dict: Path | str) -> None:
 
 if __name__ == "__main__":
     main()
-
-    validate(
-        r"C:\Users\Lukas\PycharmProjects\combModel\trainings\23-02-24_11_30\comb_model_2-0.8.pth"
-    )

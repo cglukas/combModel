@@ -16,10 +16,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install pylint
         pip install -r requirements.txt
-    - name: Clone pylint threshold script
-      run: |
-        git clone https://gist.github.com/08de8563d24c9836689a58baf6097316.git
-        mv 08de8563d24c9836689a58baf6097316/lint.py .
     - name: Analysing the code with pylint
       run: |
-        python lint.py --path development --path tests --threshold 9.5
+        pylint --fail-under=9.5 $(git ls-files '*.py')

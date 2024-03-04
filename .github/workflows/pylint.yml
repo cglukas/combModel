@@ -22,4 +22,4 @@ jobs:
         mv 08de8563d24c9836689a58baf6097316/lint.py .
     - name: Analysing the code with pylint
       run: |
-        python lint.py --path . --threshold 9.5
+        python lint.py --path $(git ls-files '*.py') --threshold 9.5

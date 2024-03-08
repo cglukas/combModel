@@ -14,7 +14,7 @@ from development.model.comb_model import CombModel
 from development.trainer.level_manager import ScoreGatedLevelManager
 from development.trainer.trainer import Trainer
 from development.trainer.visualizer import TrainVisualizer
-from development.trainer.training_logger import TrainLogger
+from development.trainer.training_logger import TrainLogger, WandBLogger
 
 
 def _get_loaders(batch_size: int) -> list[DataLoader]:
@@ -86,7 +86,9 @@ def main():
     model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
-    logger = TrainLogger(
+    logger = WandBLogger(
+        project="combmodel",
+        entity="cglukas",
         learning_rate=learning_rate,
         blend_rate=blend_rate,
         optimizer=str(type(optimizer)),

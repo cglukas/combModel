@@ -9,23 +9,12 @@ class AbstractLevelManager(ABC):
         self.blend = 0
         self.level = 0
 
-    def get_start_values(self) -> tuple[int, float]:
-        """Get the start values of level and blend.
-
-        Returns:
-            Level, blend as a tuple.
-        """
-        return self.level, self.blend
-
     @abstractmethod
-    def get_next_level_and_blend(self, score: float = 1.0) -> tuple[int, float]:
+    def increase_level_and_blend(self, score: float = 1.0) -> None:
         """Get the current level.
 
         Args:
             score: (optional) score between 0 (bad) and 1 (good).
-
-        Returns:
-           level, blend as a tuple.
         """
         pass
 
@@ -44,21 +33,16 @@ class LinearManager(AbstractLevelManager):
         self._blend_rate = rate
         self._max_level = max_level
 
-    def get_next_level_and_blend(self, score: float = 1.0) -> tuple[int, float]:
-        """Get the next level and blend.
+    def increase_level_and_blend(self, score: float = 1.0) -> None:
+        """Increase the level and blend.
 
         Args:
             score: this won't be used here.
-
-        Returns:
-            Level and blend value for the current time.
         """
         self.blend += self._blend_rate
         if self.blend >= 1:
             self.blend = 0
-            self.level = min(self._max_level, self.level+1)
-
-        return self.level, self.blend
+            self.level = min(self._max_level, self.level + 1)
 
 
 class ScoreGatedManager(AbstractLevelManager):
@@ -77,8 +61,8 @@ class ScoreGatedManager(AbstractLevelManager):
         self._min_score = min_score
         self._max_level = max_level
 
-    def get_next_level_and_blend(self, score: float = 1.0) -> tuple[int, float]:
-        """Get the next level and blend.
+    def increase_level_and_blend(self, score: float = 1.0) -> None:
+        """Increase the next level and blend if the score is high enough.
 
         Args:
             score: if the score is below the threshold, the level and blend are not increased.
@@ -87,14 +71,12 @@ class ScoreGatedManager(AbstractLevelManager):
             Next level and blend values.
         """
         if score < self._min_score:
-            return self.level, self.blend
+            return
 
         self.blend += self._blend_rate
         if self.blend >= 1:
             self.blend = 0
-            self.level = min(self._max_level, self.level+1)
-
-        return self.level, self.blend
+            self.level = min(self._max_level, self.level + 1)
 
 
 class ScoreGatedLevelManager(AbstractLevelManager):
@@ -112,20 +94,19 @@ class ScoreGatedLevelManager(AbstractLevelManager):
         self._blend_rate = rate
         self._min_score = min_score
         self._max_level = max_level
-    def get_next_level_and_blend(self, score: float = 1.0) -> tuple[int, float]:
-        """Get the next level and blend.
+
+    def increase_level_and_blend(self, score: float = 1.0):
+        """Increase the level and blend.
+
+        If the next level should start and the score is higher than min_score,
+        the level will be increased. Else the old values will be used and the
+        blend will be limited to 1.
 
         Args:
             score: current score of the model.
-
-        Returns:
-             If the score is higher than min_score, the level will be increased.
-             Else the old values will be returned.
         """
         self.blend += self._blend_rate
         self.blend = min(self.blend, 1)
         if self.blend == 1 and score >= self._min_score:
             self.blend = 0
-            self.level = min(self._max_level, self.level+1)
-
-        return self.level, self.blend
+            self.level = min(self._max_level, self.level + 1)

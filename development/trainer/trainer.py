@@ -72,7 +72,7 @@ class Trainer:
             if self.epoch % self.save_epochs == 1:
                 self.save()
             # TODO: add stop condition if max level is reached.
-            self.level_manager.get_next_level_and_blend(score=self.epoch_score)
+            self.level_manager.increase_level_and_blend(score=self.epoch_score)
 
     def save(self):
         """Save the model and optimizer.

@@ -51,3 +51,17 @@ def convert_model(model_checkpoint: Path, export_path: Path) -> None:
 
     model.load_state_dict(state_dict)
     export_path.write_text("test")
+
+
+def _convert_model_to_torchscript(model: NukeModel, temp_path: Path) -> None:
+    """Convert the model to the intermediate torchscript file type.
+
+    Args:
+        model: loaded NukeModel.
+        temp_path: export path for the torchscript file.
+    """
+    model.eval()
+    width = height = 64
+    trace_input = torch.rand(1, 3, height, width)
+    traced = torch.jit.script(model)
+    traced.save(temp_path)

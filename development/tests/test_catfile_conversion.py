@@ -6,7 +6,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 import torch
 
-from development.model.catfile_conversion import NukeModel, convert_model
+from development.model.catfile_conversion import (
+    NukeModel,
+    _convert_model_to_torchscript,
+    convert_model,
+)
 from development.model.comb_model import CombModel
 
 
@@ -36,3 +40,15 @@ def test_convert_model(loaded_model: MagicMock, persons: int):
 
         loaded_model.assert_called_with(str(state_dict))
         assert export_file.exists()
+
+
+def test_convert_model_to_torchscript() -> None:
+    """Test that the nuke model can be converted to torchscript."""
+    model = CombModel(persons=2)
+    nuke_model = NukeModel(model)
+
+    with TemporaryDirectory() as export_dir:
+        model_file = Path(export_dir) / "test_export.pt"
+        _convert_model_to_torchscript(nuke_model, model_file)
+
+        assert model_file.exists()

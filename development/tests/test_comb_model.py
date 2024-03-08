@@ -1,14 +1,13 @@
 import pytest
 import torch
 
+from development.data_io.dataloader2 import ImageSize
 from development.model.comb_model import (
     CombModel,
 )
 
-LEVELS_AND_IMAGE_SIZE = list(enumerate([4, 8, 16, 32, 64, 128, 256, 512, 1024]))
 
-
-@pytest.mark.parametrize(("level", "size"), LEVELS_AND_IMAGE_SIZE)
+@pytest.mark.parametrize(("level", "size"), enumerate(ImageSize))
 def test_comb_model(level: int, size: int):
     """Test that the expected tensor sizes will be processed correctly."""
     rand = torch.ones((1, 3, size, size))

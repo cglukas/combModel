@@ -24,7 +24,7 @@ def test_convert_model(torch_load: MagicMock):
         torch.save(model.state_dict(), state_dict)
         export_file = tmp_dir / "export.pt"
 
-        convert_model(state_dict, export_file)
+        convert_model(state_dict, export_file, level=0)
 
         torch_load.assert_called_with(str(state_dict))
         exported_model = torch.jit.load(export_file)

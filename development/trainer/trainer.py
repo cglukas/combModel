@@ -9,6 +9,7 @@ from torchmetrics import StructuralSimilarityIndexMeasure
 
 from development.data_io import dataloader
 from development.model.comb_model import CombModel
+from development.trainer.level_manager import AbstractLevelManager, LinearManager
 from development.trainer.training_logger import TrainLogger
 from development.trainer.visualizer import TrainVisualizer
 
@@ -19,30 +20,27 @@ class Trainer:
     def __init__(
         self,
         model: CombModel,
-        optimizer,
+        optimizer: torch.optim.optimizer.Optimizer,
         dataloaders: List[DataLoader],
-        show_preview=False,
         device="cpu",
         save_epochs=5,
-        max_level=8,
         logger: TrainLogger = None,
+        level_manager: AbstractLevelManager | None = None,
     ):
-        self.max_level = min(max_level, 8)
         self.dataloaders: List[DataLoader] = dataloaders
-        self.show_preview = show_preview
         self.device = device
         self.save_epochs = save_epochs
         self.train_start = datetime.now().strftime("%d-%m-%y_%H_%M")
-
-        self.blend_rate = 1e-4
-        """Rate at which the next level of the model is blended into the training."""
+        self.level_manager = level_manager or LinearManager(rate=0.05)
         self.accumulated_score: float = 0.0
         """The accumulated score of all training steps in one epoch. To get a measure 
         of the model performance divide this with the samples of the epoch."""
         self.model = model
         """The model to train."""
         self.model.to(device)
+
         self.optimizer: torch.optim.optimizer.Optimizer = optimizer
+        self.optimizer.to(device)
 
         self.metric = StructuralSimilarityIndexMeasure()
         """The metric of the training needs to create a score. This means it needs to 
@@ -59,13 +57,6 @@ class Trainer:
         self.current_person: int = 0
         """The current person that is trained. This will define which decoder of the
         model will be used and what dataloader will provide the data."""
-        self.current_level: int = 0
-        """The current level of the multilevel comb model. This defines which entry and
-        exit layer of the model will be used for inference. It can be in the range of
-        0-8."""
-        self.current_blend: float = 0.0
-        """The current influence of the next layer of the model. The allowed range is from
-        0 to 1."""
         self.epoch = 0
         self.epoch_score = 0
 
@@ -80,7 +71,8 @@ class Trainer:
             self.train_one_epoch()
             if self.epoch % self.save_epochs == 1:
                 self.save()
-            self._increase_blend_and_level()
+            # TODO: add stop condition if max level is reached.
+            self.level_manager.get_next_level_and_blend(score=self.epoch_score)
 
     def save(self):
         """Save the model and optimizer.
@@ -103,29 +95,13 @@ class Trainer:
         torch.save(
             self.model.state_dict(),
             filepath
-            / f"comb_model_{self.current_level}-{round(self.current_blend, 1)}.pth",
+            / f"comb_model_{self.level_manager.level}-{round(self.level_manager.blend, 1)}.pth",
         )
         torch.save(
             self.optimizer.state_dict(),
             filepath
-            / f"comb_model_optim_{self.current_level}-{round(self.current_blend, 1)}.pth",
+            / f"comb_model_optim_{self.level_manager.level}-{round(self.level_manager.blend, 1)}.pth",
         )
-
-    def _increase_blend_and_level(self):
-        """Increase the `current_blend` with the blend rate.
-
-        If the blend gets above 1.0 it will fall back to 0. The `current_level`
-        gets increased when the blend rate reached 1.0.
-        """
-        self.current_blend += self.blend_rate
-        if self.current_blend > 1:
-            self.current_blend = 0
-            self.current_level += 1
-        if self.current_level > self.max_level:
-            # Stop the training.
-            self.training = False
-
-        self.current_level = min(self.current_level, self.max_level)
 
     def train_one_epoch(self):
         """Train the model for one epoch.
@@ -158,9 +134,9 @@ class Trainer:
         self.epoch_score = self.accumulated_score / i / len(self.dataloaders)
         if self.logger:
             self.logger.log(
-                level=self.current_level,
-                blend=self.current_blend,
-                blend_rate=self.blend_rate,
+                level=self.level_manager.level,
+                blend=self.level_manager.blend,
+                blend_rate=0,
                 score=self.epoch_score,
                 epoch=self.epoch,
             )
@@ -174,7 +150,7 @@ class Trainer:
         until all samples of the longest dataset have been yielded once.
         Smaller datasets are repeated in this process.
         """
-        dataloader.SizeLoader.scale = dataloader.SCALES[self.current_level]
+        dataloader.SizeLoader.scale = dataloader.SCALES[self.level_manager.level]
         batch_size = self.dataloaders[0].batch_size
         iterators = [iter(loader) for loader in self.dataloaders]
         for _ in range(int(self._max_dataset_length / batch_size)):
@@ -223,6 +199,6 @@ class Trainer:
         return self.model.progressive_forward(
             person=self.current_person,
             batch=batch,
-            level=self.current_level,
-            last_level_influence=self.current_blend,
+            level=self.level_manager.level,
+            last_level_influence=self.level_manager.blend,
         )

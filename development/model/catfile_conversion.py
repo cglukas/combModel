@@ -43,8 +43,9 @@ def convert_model(model_checkpoint: Path, export_path: Path) -> None:
         model_checkpoint: path of the model state dict.
         export_path: path where the catfile should be written to.
     """
-    initialize_comb_model(model_checkpoint)
-    export_path.write_text("test")
+    model = initialize_comb_model(model_checkpoint)
+    nuke_model = NukeModel(model)
+    _convert_model_to_torchscript(nuke_model, export_path)
 
 
 def _convert_model_to_torchscript(model: NukeModel, temp_path: Path) -> None:

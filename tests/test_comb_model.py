@@ -5,10 +5,10 @@ from development.model.comb_model import (
     CombModel,
 )
 
-_levels = list(enumerate([4, 8, 16, 32, 64, 128, 256, 512, 1024]))
+LEVELS_AND_IMAGE_SIZE = list(enumerate([4, 8, 16, 32, 64, 128, 256, 512, 1024]))
 
 
-@pytest.mark.parametrize(("level", "size"), _levels)
+@pytest.mark.parametrize(("level", "size"), LEVELS_AND_IMAGE_SIZE)
 def test_comb_model(level: int, size: int):
     """Test that the expected tensor sizes will be processed correctly."""
     rand = torch.ones((1, 3, size, size))

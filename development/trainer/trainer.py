@@ -4,73 +4,13 @@ from pathlib import Path
 from typing import Iterator, List
 
 import torch
-import torchvision
-import wandb
-from cv2 import cv2
 from torch.utils.data import DataLoader
 from torchmetrics import StructuralSimilarityIndexMeasure
 
 from development.data_io import dataloader
 from development.model.comb_model import CombModel
-
-
-class TrainLogger:
-    """Log progress on the terminal and at wandb.ai"""
-
-    def __init__(self, learning_rate: float, blend_rate: float, optimizer: str, continue_id: str = ""):
-        if not continue_id:
-            wandb.init(project="compmodel", entity="cglukas")
-            wandb.config.update(
-                {
-                    "learning_rate": learning_rate,
-                    "blend_rate": blend_rate,
-                    "optimizer": optimizer,
-                }
-            )
-        else:
-            wandb.init(project="compmodel", entity="cglukas", resume="must", id=continue_id)
-
-    @staticmethod
-    def log(level: int, blend: float, blend_rate: float, score: float, epoch: int):
-        """Log a datapoint.
-
-        Args:
-            level: Current level of the training.
-            blend: Current blend factor.
-            blend_rate: Rate at which blending is happening.
-            score: Current score of the network.
-            epoch: Current epoch of teh training.
-        """
-        print(
-            f"Time: {datetime.now().strftime('%H:%M:%S')}, Level {level} - {blend}, rate: {blend_rate}, score: {score}"
-        )
-        wandb.log(
-            {
-                "score": score,
-                "level": level + blend,
-                "blend_rate": blend_rate,
-                "epoch": epoch,
-            }
-        )
-
-    @staticmethod
-    def log_image(image: torch.Tensor | wandb.Image, epoch: int):
-        """Add an image to wandb.ai for the current epoch.
-
-        Note:
-            Don't spam this method as wandb will complain about large traffic.
-
-        Args:
-            image: Image to store.
-            epoch: Current epoch that will be used for associating the image with
-                   the model progress.
-        """
-        wandb.log(
-            {
-                "epoch": epoch,
-                "image": wandb.Image(image, caption="Reconstruction of model"),
-            }
-        )
+from development.trainer.training_logger import TrainLogger
+from development.trainer.visualizer import TrainVisualizer
 
 
 class Trainer:
@@ -286,50 +226,3 @@ class Trainer:
             level=self.current_level,
             last_level_influence=self.current_blend,
         )
-
-
-class TrainVisualizer:
-    """Visualizer for collecting and showing intermediate training results."""
-
-    def __init__(self):
-        self.previews: List[torch.Tensor] = []
-        self.image = None
-
-    def add_image(self, image: torch.Tensor):
-        """Add a single image.
-
-        Calling this method alternately with the source and processed image
-        will result in a grid where on one side the source images are and
-        on the other side the processed images.
-
-        Args:
-            image: image to display. Size of the image must be the same like
-                   already added images. If other sized images neeed to be
-                   displayed, call `clear` before that.
-        """
-        self.previews.append(image)
-
-    def add_batches(self, source: torch.Tensor, processed: torch.Tensor):
-        """Add a full batch of images.
-
-        Source and processed images need to be of the same size and batch
-        sizes need to be the same.
-
-        Args:
-            source: Batch of source images (will be on the left side of the grid).
-            processed: Batch of processed images (will be on the right side of the grid).
-        """
-        for src, prev in zip(source, processed):
-            self.previews.append(src)
-            self.previews.append(prev)
-
-    def show(self):
-        """Display the previews in a new window."""
-        self.image = torchvision.utils.make_grid(self.previews, nrow=2)
-        self.image = self.image.permute(1, 2, 0).detach().cpu().numpy()
-        cv2.imshow("Deepfake Preview", cv2.cvtColor(self.image, cv2.COLOR_RGB2BGR))
-        cv2.waitKey(200)
-
-    def clear(self):
-        """Clear the loaded previews."""
-        self.previews = []

@@ -11,7 +11,9 @@ from development.data_io import dataloader
 from development.data_io.dataloader import SizeLoader
 from development.data_io.dataloader2 import PersonDataset
 from development.model.comb_model import CombModel
-from development.trainer.training import TrainLogger, TrainVisualizer, Trainer
+from development.trainer.trainer import Trainer
+from development.trainer.visualizer import TrainVisualizer
+from development.trainer.training_logger import TrainLogger
 
 
 def _get_loaders(batch_size: int) -> list[DataLoader]:

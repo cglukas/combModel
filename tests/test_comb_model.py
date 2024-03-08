@@ -6,33 +6,7 @@ from development.model.comb_model import (
     CombModel,
     Decoder,
     Encoder,
-    torchscript_index_access,
 )
-
-
-@pytest.mark.parametrize(
-    ("num_modules", "index"),
-    [
-        (1, 0),
-        (2, 0),
-        (4, 2),
-    ],
-)
-def test_torchscript_index_access(num_modules: int, index: int):
-    """Test that the function replicates index accesses."""
-    modules = [nn.ReLU() for _ in range(num_modules)]
-    modules_list = nn.ModuleList(modules)
-
-    found_module = torchscript_index_access(index=index, modules=modules_list)
-
-    assert found_module == modules[index]
-
-
-def test_torchscript_index_access_index_out_of_range():
-    """Test that an index error is raised."""
-    with pytest.raises(IndexError, match="Index not found in list."):
-        torchscript_index_access(index=1, modules=nn.ModuleList())
-
 
 _levels = list(enumerate([4, 8, 16, 32, 64, 128, 256, 512, 1024]))
 

@@ -5,28 +5,6 @@ from torch import nn
 _RELU_ALPHA = 0.2
 
 
-def torchscript_index_access(
-    index: int, modules: nn.ParameterList | nn.ModuleList
-) -> nn.Module:
-    """Get the module of the list at the index.
-
-    Notes:
-        This function feels very redundant but is necessary to convert the model
-        to torchscript via `torch.jit.script`.
-
-    Args:
-        index: index of the module.
-        modules: iterable list of modules.
-
-    Returns:
-        Found module.
-    """
-    for i, module in enumerate(modules):
-        if i == index:
-            return module
-    raise IndexError("Index not found in list.")
-
-
 class Encoder(nn.Module):
     """Encoder part of the encoder-decoder model.
 

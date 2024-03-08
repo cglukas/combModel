@@ -33,18 +33,41 @@ def test_torchscript_index_access_index_out_of_range():
         torchscript_index_access(index=1, modules=nn.ModuleList())
 
 
-def test_comb_model():
-    """Test that the expected tensor sizes will be processed correctly."""
-    enc = Encoder()
-    dec = Decoder()
-    comb = CombModel()
-    for level, size in enumerate([4, 8, 16, 32, 64, 128, 256, 512, 1024]):
-        rand = torch.rand((1, 3, size, size))
+_levels = list(enumerate([4, 8, 16, 32, 64, 128, 256, 512, 1024]))
 
-        latent = enc.forward(rand, level=level)
-        assert (1, 512, 1, 1) == latent.shape
-        reconstruct = dec.forward(latent, level=level)
-        assert rand.shape == reconstruct.shape
+
+@pytest.mark.parametrize(("level", "size"), _levels)
+def test_comb_model(level: int, size: int):
+    """Test that the expected tensor sizes will be processed correctly."""
+    rand = torch.rand((1, 3, size, size))
+    comb = CombModel()
+
+    reconstruct_comb = comb.progressive_forward(0, rand, level, 0.5)
+
+    assert rand.shape == reconstruct_comb.shape
+
+
+@pytest.mark.parametrize(("level", "size"), _levels)
+def test_decoder(level: int, size: int):
+    """Test that all decoder levels reconstruct the latent vector to the input size."""
+    rand = torch.rand((1, 512, 1, 1))
+    dec = Decoder()
+
+    reconstructed = dec.forward(rand, level=level)
+
+    assert (1, 3, size, size) == reconstructed.shape
+
+
+@pytest.mark.parametrize(("level", "size"), _levels)
+def test_encoder(level: int, size: int):
+    """Test that all encoder levels are encoded to the same latent tensor."""
+    rand = torch.rand((1, 3, size, size))
+    enc = Encoder()
+
+    latent = enc.forward(rand, level=level)
+
+    assert (1, 512, 1, 1) == latent.shape
+
 
         reconstruct_comb = comb.progressive_forward(0, rand, level, 0.5)
         assert rand.shape == reconstruct_comb.shape

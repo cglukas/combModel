@@ -4,6 +4,7 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from development.data_io.dataloader2 import ImageSize
 from development.model.comb_model import CombModel
 
 
@@ -61,7 +62,7 @@ def _convert_model_to_torchscript(model: NukeModel, temp_path: Path) -> None:
         temp_path: export path for the torchscript file.
     """
     model.eval()
-    width = height = 64
+    width = height = ImageSize.from_index(model.level)
     trace_input = torch.rand(1, 3, height, width)
     # TODO use torch.jit.script instead of trace.
     #  this is only possible once the CombModel is scriptable.

@@ -42,10 +42,13 @@ def test_convert_model(loaded_model: MagicMock, persons: int):
         assert export_file.exists()
 
 
-def test_convert_model_to_torchscript() -> None:
+@pytest.mark.slow
+@pytest.mark.parametrize("level", [0, 1, 2, 3, 4, 5, 6, 7, 8])
+def test_convert_model_to_torchscript(level: int) -> None:
     """Test that the nuke model can be converted to torchscript."""
     model = CombModel(persons=2)
     nuke_model = NukeModel(model)
+    nuke_model.level = level
 
     with TemporaryDirectory() as export_dir:
         model_file = Path(export_dir) / "test_export.pt"

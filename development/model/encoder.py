@@ -1,3 +1,4 @@
+"""Module of the encoder of the neuronal network."""
 from torch import nn
 
 from development.model.constants import RELU_ALPHA

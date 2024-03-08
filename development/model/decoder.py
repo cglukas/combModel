@@ -1,3 +1,4 @@
+"""Module for the Decoder part of the neuronal network."""
 import torch
 from torch import nn
 

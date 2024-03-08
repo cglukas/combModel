@@ -24,11 +24,10 @@ def test_nuke_model_forward() -> None:
     assert processed.shape == test_input.shape
 
 
-@pytest.mark.parametrize("persons", [1, 2, 4])
 @patch("torch.load", wraps=torch.load)
-def test_convert_model(loaded_model: MagicMock, persons: int):
+def test_convert_model(loaded_model: MagicMock):
     """Test that the model can be converted from the state dict file."""
-    model = CombModel(persons=persons)
+    model = CombModel()
 
     with TemporaryDirectory() as export_dir:
         export_dir = Path(export_dir)

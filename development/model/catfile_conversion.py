@@ -6,6 +6,7 @@ from torch import nn
 
 from development.data_io.dataloader2 import ImageSize
 from development.model.comb_model import CombModel
+from development.model.utils import initialize_comb_model
 
 
 class NukeModel(nn.Module):
@@ -42,15 +43,7 @@ def convert_model(model_checkpoint: Path, export_path: Path) -> None:
         model_checkpoint: path of the model state dict.
         export_path: path where the catfile should be written to.
     """
-    state_dict = torch.load(str(model_checkpoint))
-    keys = state_dict.keys()
-    num_persons = 0
-    while f"decoders.{num_persons}.levels.0.0.weight" in keys:
-        num_persons += 1
-
-    model = CombModel(persons=num_persons)
-
-    model.load_state_dict(state_dict)
+    initialize_comb_model(model_checkpoint)
     export_path.write_text("test")
 
 

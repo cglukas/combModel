@@ -46,14 +46,12 @@ def _parse_args(model: str, export: str) -> int:
     """Convert a model checkpoint into a torchscript file."""
     export_file = Path(export)
     if not os.access(export_file.parent, os.W_OK):
-        msg = f"Can't write to export path: '{export_file}'"
-        print(msg)
+        print(f"Can't write to export path: '{export_file}'")
         return 1
 
     model_checkpoint = Path(model)
     if not model_checkpoint.exists():
-        msg = f"Checkpoint can't be found: '{model_checkpoint}'."
-        print(msg)
+        print(f"Checkpoint can't be found: '{model_checkpoint}'.")
         return 1
 
     convert_model(model_checkpoint, export_file)

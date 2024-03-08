@@ -159,6 +159,7 @@ class Trainer:
             print(f"{filepath} created")
             filepath.mkdir(exist_ok=True)
         self.logger.log_image(self.visualizer.image, self.epoch)
+        # TODO [cglukas]: Model needs to be brought back to cpu before saving.
         torch.save(
             self.model.state_dict(),
             filepath

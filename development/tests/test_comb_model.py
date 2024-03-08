@@ -1,3 +1,4 @@
+"""Tests for the comb model."""
 import pytest
 import torch
 

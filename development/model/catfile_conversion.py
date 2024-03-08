@@ -63,5 +63,7 @@ def _convert_model_to_torchscript(model: NukeModel, temp_path: Path) -> None:
     model.eval()
     width = height = 64
     trace_input = torch.rand(1, 3, height, width)
-    traced = torch.jit.script(model)
+    # TODO use torch.jit.script instead of trace.
+    #  this is only possible once the CombModel is scriptable.
+    traced = torch.jit.trace(model, trace_input)
     traced.save(temp_path)

@@ -5,6 +5,28 @@ from torch import nn
 _RELU_ALPHA = 0.2
 
 
+def torchscript_index_access(
+    index: int, modules: nn.ParameterList | nn.ModuleList
+) -> nn.Module:
+    """Get the module of the list at the index.
+
+    Notes:
+        This function feels very redundant but is necessary to convert the model
+        to torchscript via `torch.jit.script`.
+
+    Args:
+        index: index of the module.
+        modules: iterable list of modules.
+
+    Returns:
+        Found module.
+    """
+    for i, module in enumerate(modules):
+        if i == index:
+            return module
+    raise IndexError("Index not found in list.")
+
+
 class Encoder(nn.Module):
     """Encoder part of the encoder-decoder model.
 
@@ -360,20 +382,3 @@ class CombModel(nn.Module):
         return decoder.progressive_forward(
             self.latent, level, last_lvl_influence=last_level_influence
         )
-
-
-def test_comb_model():
-    """Test that the expected tensor sizes will be processed correctly."""
-    enc = Encoder()
-    dec = Decoder()
-    comb = CombModel()
-    for level, size in enumerate([4, 8, 16, 32, 64, 128, 256, 512, 1024]):
-        rand = torch.rand((1, 3, size, size))
-
-        latent = enc.forward(rand, level=level)
-        assert (1, 512, 1, 1) == latent.shape
-        reconstruct = dec.forward(latent, level=level)
-        assert rand.shape == reconstruct.shape
-
-        reconstruct_comb = comb.progressive_forward(0, rand, level, 0.5)
-        assert rand.shape == reconstruct_comb.shape

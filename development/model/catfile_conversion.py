@@ -1,6 +1,9 @@
 """Conversion process to generate a nuke compliant cat file."""
+import os
+import sys
 from pathlib import Path
 
+import click
 import torch
 from torch import nn
 
@@ -62,3 +65,33 @@ def _convert_model_to_torchscript(model: NukeModel, temp_path: Path) -> None:
     #  this is only possible once the CombModel is scriptable.
     traced = torch.jit.trace(model, trace_input)
     traced.save(temp_path)
+
+
+@click.command()
+@click.option("--model", "-m", prompt=True, type=str)
+@click.option("--export", "-e", prompt=True, type=str)
+def _parse_args(model: str, export: str) -> int:
+    """Convert a model checkpoint into a torchscript file."""
+    export_file = Path(export)
+    if not os.access(export_file.parent, os.W_OK):
+        msg = f"Can't write to export path: '{export_file}'"
+        print(msg)
+        return 1
+
+    model_checkpoint = Path(model)
+    if not model_checkpoint.exists():
+        msg = f"Checkpoint can't be found: '{model_checkpoint}'."
+        print(msg)
+        return 1
+
+    convert_model(model_checkpoint, export_file)
+    if not export_file.exists():
+        print("Something went wrong while exporting.")
+        return 1
+
+    print("Finished successfully.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(_parse_args())  # pylint: disable=E1120

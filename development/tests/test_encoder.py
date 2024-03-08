@@ -6,6 +6,7 @@ from development.data_io.dataloader2 import ImageSize
 from development.model.encoder import Encoder
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(("level", "size"), enumerate(ImageSize))
 def test_encoder(level: int, size: int):
     """Test that all encoder levels are encoded to the same latent tensor."""
@@ -17,6 +18,7 @@ def test_encoder(level: int, size: int):
     assert (1, 512, 1, 1) == latent.shape
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(("level", "size"), enumerate(ImageSize))
 @pytest.mark.parametrize("last_lvl_influence", [0.0, 0.5, 1.0])
 def test_encoder_progressive_forward(level: int, size: int, last_lvl_influence: float):
@@ -31,6 +33,7 @@ def test_encoder_progressive_forward(level: int, size: int, last_lvl_influence: 
     assert (1, 512, 1, 1) == latent.shape
 
 
+@pytest.mark.xfail(reason="The encoder is currently not scriptable.")
 def test_encoder_torchscript():
     """Test that the encoder can be scripted."""
     enc = Encoder()

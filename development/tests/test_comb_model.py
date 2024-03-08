@@ -8,6 +8,7 @@ from development.model.comb_model import (
 )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(("level", "size"), enumerate(ImageSize))
 def test_comb_model(level: int, size: int):
     """Test that the expected tensor sizes will be processed correctly."""

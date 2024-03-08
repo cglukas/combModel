@@ -6,6 +6,7 @@ from development.data_io.dataloader2 import ImageSize
 from development.model.decoder import Decoder
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(("level", "size"), enumerate(ImageSize))
 def test_decoder(level: int, size: int):
     """Test that all decoder levels reconstruct the latent vector to the input size."""
@@ -17,6 +18,7 @@ def test_decoder(level: int, size: int):
     assert (1, 3, size, size) == reconstructed.shape
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(("level", "size"), enumerate(ImageSize))
 @pytest.mark.parametrize("last_lvl_influence", [0.0, 0.5, 1.0])
 def test_decoder_progressive_forward(level: int, size: int, last_lvl_influence: float):

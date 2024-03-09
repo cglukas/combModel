@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Iterator, List
 
 import torch
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torchmetrics import StructuralSimilarityIndexMeasure
 
@@ -20,7 +21,7 @@ class Trainer:
     def __init__(
         self,
         model: CombModel,
-        optimizer: torch.optim.optimizer.Optimizer,
+        optimizer: Optimizer,
         dataloaders: List[DataLoader],
         device="cpu",
         save_epochs=5,
@@ -39,7 +40,7 @@ class Trainer:
         """The model to train."""
         self.model.to(device)
 
-        self.optimizer: torch.optim.optimizer.Optimizer = optimizer
+        self.optimizer: Optimizer = optimizer
         self.optimizer.to(device)
 
         self.metric = StructuralSimilarityIndexMeasure()

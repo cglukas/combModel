@@ -22,7 +22,6 @@ class DatasetManager:
         self._shuffle = shuffle
 
         self._dataloaders = []
-        self._level = 0
 
         self.epoch_percent: float = 0.0
         """Percentage of the processed batches."""

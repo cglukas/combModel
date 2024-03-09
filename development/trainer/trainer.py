@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from torchmetrics import StructuralSimilarityIndexMeasure
 
 from development.data_io import dataloader
+from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
 from development.trainer.level_manager import AbstractLevelManager, LinearManager
 from development.trainer.training_file_io import TrainingIO
@@ -23,18 +24,20 @@ class Trainer:
         self,
         model: CombModel,
         optimizer: Optimizer,
-        dataloaders: List[DataLoader],
+        dataset_manager: DatasetManager,
         file_io: TrainingIO,
         device="cpu",
         save_epochs=5,
         logger: TrainLogger = None,
         level_manager: AbstractLevelManager | None = None,
     ):
-        self.dataloaders: List[DataLoader] = dataloaders
         self.device = device
         self.save_epochs = save_epochs
+
         self.file_io = file_io
         self.level_manager = level_manager or LinearManager(rate=0.05)
+        self.dataset_manager = dataset_manager
+
         self.accumulated_score: float = 0.0
         """The accumulated score of all training steps in one epoch. To get a measure 
         of the model performance divide this with the samples of the epoch."""
@@ -49,12 +52,6 @@ class Trainer:
         increase if the output improves. It's also necessary that the metric can be used
         like `metric(predictions, targets)`"""
         self.metric.to(self.device)
-
-        self._max_dataset_length = max(
-            len(loader.dataset) for loader in self.dataloaders
-        )
-        """The length of the longest dataset. Every other dataset will be repeated in order
-        to match this length."""
 
         self.current_person: int = 0
         """The current person that is trained. This will define which decoder of the
@@ -76,6 +73,9 @@ class Trainer:
                     self.save()
                 # TODO: add stop condition if max level is reached.
                 self.level_manager.increase_level_and_blend(score=self.epoch_score)
+                self.dataset_manager.set_level(self.level_manager.level)
+        except Exception:
+            raise
         finally:
             # Allways save the last training state.
             # TODO modify the file so that it can be differentiated from normal saves.
@@ -103,7 +103,7 @@ class Trainer:
         self.accumulated_score = 0
         i = 1  # prevent any zero division error
         last_images = {}
-        for i, samples in enumerate(self.get_next_samples(), start=1):
+        for i, samples in enumerate(self.dataset_manager.iter_batches(), start=1):
             self.visualizer.clear()
 
             for person, single_sample in enumerate(samples):
@@ -115,13 +115,13 @@ class Trainer:
 
         with torch.no_grad():
             for person, img in last_images.items():
-                self.current_person = (person + 1) % len(self.dataloaders)
+                self.current_person = (person + 1) % len(self.dataset_manager._datasets)
                 self.visualizer.add_image(img)
                 swapped = self.process_batch(img.unsqueeze(dim=0))
                 self.visualizer.add_image(swapped.squeeze())
         self.visualizer.show()
 
-        self.epoch_score = self.accumulated_score / i / len(self.dataloaders)
+        self.epoch_score = self.accumulated_score / i / len(self.dataset_manager._datasets)
         if self.logger:
             self.logger.log(
                 level=self.level_manager.level,
@@ -130,33 +130,6 @@ class Trainer:
                 score=self.epoch_score,
                 epoch=self.epoch,
             )
-
-    def get_next_samples(
-        self,
-    ) -> Iterator[List[tuple[torch.Tensor, torch.Tensor]]]:
-        """Get the next samples of the dataloaders.
-
-        This will iterate over all dataloaders and yield the samples of them
-        until all samples of the longest dataset have been yielded once.
-        Smaller datasets are repeated in this process.
-        """
-        dataloader.SizeLoader.scale = dataloader.SCALES[self.level_manager.level]
-        batch_size = self.dataloaders[0].batch_size
-        iterators = [iter(loader) for loader in self.dataloaders]
-        for _ in range(int(self._max_dataset_length / batch_size)):
-            output = []
-
-            for j, _iter in enumerate(iterators):
-                try:
-                    sample = next(_iter)
-                except StopIteration:
-                    _iter = iter(self.dataloaders[j])
-                    iterators[j] = _iter
-                    # Reinitialize smaller dataloaders
-                    sample = next(_iter)
-                sample = sample[0].to(self.device), sample[1].to(self.device)
-                output.append(sample)
-            yield output
 
     def train_one_batch(self, batch: tuple[torch.Tensor, torch.Tensor]):
         """Train one batch and perform backpropagation on it.

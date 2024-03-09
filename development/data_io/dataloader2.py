@@ -87,9 +87,6 @@ class PersonDataset(Dataset):
         Returns:
             Tensor of the loaded image.
         """
-        # TODO remove this once the scale setting is implemented
-        self._scale = ImageSize(SizeLoader.scale)
-
         img_files = self._get_images_for_scale(self._scale)
         img_path = img_files[index]
         img = PIL.Image.open(str(img_path))

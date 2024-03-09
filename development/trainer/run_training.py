@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from development.data_io import dataloader
 from development.data_io.dataloader import SizeLoader
 from development.data_io.dataloader2 import PersonDataset, TestDataSet
+from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
 from development.trainer import level_manager
 from development.trainer.trainer import Trainer
@@ -76,28 +77,28 @@ def main():
     ### Hyper parameter
     learning_rate = 10e-4  # 10e-4 is used in the disney research paper.
     blend_rate = 0.05
-    bruce = DataLoader(
-        PersonDataset(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
-        ),
-        batch_size=8,
-        shuffle=True,
-    )
-    michael = DataLoader(
-        PersonDataset(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
-        ),
-        batch_size=8,
-        shuffle=True,
-    )
-    loaders = [get_test_set(), get_test_set()]
+    # bruce = DataLoader(
+    #     PersonDataset(
+    #         Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
+    #     ),
+    #     batch_size=8,
+    #     shuffle=True,
+    # )
+    # michael = DataLoader(
+    #     PersonDataset(
+    #         Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
+    #     ),
+    #     batch_size=8,
+    #     shuffle=True,
+    # )
+    datasets = [get_test_set(), get_test_set()]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CombModel(persons=len(loaders))
+    model = CombModel(persons=len(datasets))
     model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
     # manager = level_manager.ScoreGatedLevelManager(rate=blend_rate, min_score=0.95, max_level=8)
-    manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
-
+    lvl_manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
+    dataset_manager = DatasetManager(datasets)
     logger = WandBLogger(
         project="combmodel",
         entity="cglukas",
@@ -107,24 +108,21 @@ def main():
     )
 
     start = datetime.now().strftime("%Y-%m-%d_%H_%M")
-    filepath = (
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings")
-            / f"{start}"
-    )
+    filepath = Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings") / f"{start}"
     if not filepath.exists():
         print(f"{filepath} created")
         filepath.mkdir(exist_ok=True)
-    file_io = TrainingIO(model,optimizer,manager)
+    file_io = TrainingIO(model, optimizer, lvl_manager)
     file_io.set_folder(filepath)
 
     trainer = Trainer(
         model=model,
         optimizer=optimizer,
-        dataloaders=loaders,
+        dataset_manager=dataset_manager,
         file_io=file_io,
         device=device,
         logger=logger,
-        level_manager=manager,
+        level_manager=lvl_manager,
     )
     trainer.train()
     wandb.finish()

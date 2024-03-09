@@ -1,5 +1,6 @@
 """Module for training and validating the model."""
 import re
+from datetime import datetime
 from pathlib import Path
 
 import cv2
@@ -13,6 +14,7 @@ from development.data_io.dataloader2 import PersonDataset, TestDataSet
 from development.model.comb_model import CombModel
 from development.trainer import level_manager
 from development.trainer.trainer import Trainer
+from development.trainer.training_file_io import TrainingIO
 from development.trainer.visualizer import TrainVisualizer
 from development.trainer.training_logger import WandBLogger
 
@@ -96,6 +98,8 @@ def main():
     model = CombModel(persons=len(loaders), device=device)
     model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+    # manager = level_manager.ScoreGatedLevelManager(rate=blend_rate, min_score=0.95, max_level=8)
+    manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
 
     logger = WandBLogger(
         project="combmodel",
@@ -104,12 +108,23 @@ def main():
         blend_rate=blend_rate,
         optimizer=str(type(optimizer)),
     )
-    # manager = level_manager.ScoreGatedLevelManager(rate=blend_rate, min_score=0.95, max_level=8)
-    manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
+
+    start = datetime.now().strftime("%Y-%m-%d_%H_%M")
+    filepath = (
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings")
+            / f"{start}"
+    )
+    if not filepath.exists():
+        print(f"{filepath} created")
+        filepath.mkdir(exist_ok=True)
+    file_io = TrainingIO(model,optimizer,manager)
+    file_io.set_folder(filepath)
+
     trainer = Trainer(
         model=model,
         optimizer=optimizer,
         dataloaders=loaders,
+        file_io=file_io,
         device=device,
         logger=logger,
         level_manager=manager,

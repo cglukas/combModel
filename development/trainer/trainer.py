@@ -11,6 +11,7 @@ from torchmetrics import StructuralSimilarityIndexMeasure
 from development.data_io import dataloader
 from development.model.comb_model import CombModel
 from development.trainer.level_manager import AbstractLevelManager, LinearManager
+from development.trainer.training_file_io import TrainingIO
 from development.trainer.training_logger import TrainLogger
 from development.trainer.visualizer import TrainVisualizer
 
@@ -23,6 +24,7 @@ class Trainer:
         model: CombModel,
         optimizer: Optimizer,
         dataloaders: List[DataLoader],
+        file_io: TrainingIO,
         device="cpu",
         save_epochs=5,
         logger: TrainLogger = None,
@@ -31,7 +33,7 @@ class Trainer:
         self.dataloaders: List[DataLoader] = dataloaders
         self.device = device
         self.save_epochs = save_epochs
-        self.train_start = datetime.now().strftime("%d-%m-%y_%H_%M")
+        self.file_io = file_io
         self.level_manager = level_manager or LinearManager(rate=0.05)
         self.accumulated_score: float = 0.0
         """The accumulated score of all training steps in one epoch. To get a measure 
@@ -88,25 +90,8 @@ class Trainer:
 
         Additionally, this method logs the current image of the visualizer.
         """
-        filepath = (
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings")
-            / f"{self.train_start}"
-        )
-        if not filepath.exists():
-            print(f"{filepath} created")
-            filepath.mkdir(exist_ok=True)
         self.logger.log_image(self.visualizer.image, self.epoch)
-        # TODO [cglukas]: Model needs to be brought back to cpu before saving.
-        torch.save(
-            self.model.state_dict(),
-            filepath
-            / f"comb_model_{self.level_manager.level}-{round(self.level_manager.blend, 1)}.pth",
-        )
-        torch.save(
-            self.optimizer.state_dict(),
-            filepath
-            / f"comb_model_optim_{self.level_manager.level}-{round(self.level_manager.blend, 1)}.pth",
-        )
+        self.file_io.save()
 
     def train_one_epoch(self):
         """Train the model for one epoch.

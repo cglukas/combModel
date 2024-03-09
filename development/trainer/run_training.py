@@ -7,8 +7,7 @@ import cv2
 import torch.cuda
 import wandb
 
-from development.data_io import dataloader
-from development.data_io.dataloader2 import PersonDataset, TestDataSet
+from development.data_io.dataloader2 import ImageSize, PersonDataset, TestDataSet
 from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
 from development.trainer import level_manager
@@ -103,7 +102,6 @@ def validate(model_state_dict: Path | str) -> None:
     level = int(match.group("level"))
     blend = float(match.group("blend"))
     loaders = [get_generic(), get_generic()]
-    dataloader.SizeLoader.scale = dataloader.SCALES[level]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CombModel(persons=len(loaders))
     model.eval()
@@ -112,6 +110,7 @@ def validate(model_state_dict: Path | str) -> None:
     model.load_state_dict(state_dict)
     visualizer = TrainVisualizer()
     for person, loader in enumerate(loaders):
+        loader.set_scale(ImageSize.from_index(level))
         for sample in loader:
             image, _ = sample
             image = image.to(device)

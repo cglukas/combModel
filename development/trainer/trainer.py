@@ -61,13 +61,13 @@ class Trainer:
         """Start the training process."""
         try:
             while self.training:
+                self.dataset_manager.set_level(self.level_manager.level)
                 self.epoch += 1
                 self.train_one_epoch()
                 if self.epoch % self.save_epochs == 1:
                     self.save()
                 # TODO: add stop condition if max level is reached.
                 self.level_manager.increase_level_and_blend(score=self.epoch_score)
-                self.dataset_manager.set_level(self.level_manager.level)
         except Exception:
             raise
         finally:

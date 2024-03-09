@@ -58,6 +58,7 @@ def get_generic() -> DataLoader:
     return DataLoader(
         PersonDataset(
             Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
+            device="cuda"
         ),
         batch_size=8,
         shuffle=True,
@@ -140,7 +141,7 @@ def validate(model_state_dict: Path | str) -> None:
     loaders = [get_generic(), get_generic()]
     dataloader.SizeLoader.scale = dataloader.SCALES[level]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CombModel(persons=len(loaders), device=device)
+    model = CombModel(persons=len(loaders))
     model.eval()
     model.to(device)
     state_dict = torch.load(model_state_dict)

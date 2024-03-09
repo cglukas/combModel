@@ -33,7 +33,7 @@ class ImageSize(enum.IntEnum):
 class PersonDataset(Dataset):
     """Dataset for loading a single person dataset for the comb model."""
 
-    def __init__(self, folder: str | Path, device: torch.device):
+    def __init__(self, folder: str | Path, device: torch.device = torch.device("cpu")):
         """Initialize the PersonDataset.
 
         Args:

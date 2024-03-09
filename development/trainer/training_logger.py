@@ -73,7 +73,7 @@ class WandBLogger(TrainLogger):
             score: Current score of the network.
             epoch: Current epoch of teh training.
         """
-        super().log(level, blend, blend_rate, score, epoch)
+        super(WandBLogger, WandBLogger).log(level, blend, blend_rate, score, epoch)
         wandb.log(
             {
                 "score": score,

@@ -41,7 +41,6 @@ class Trainer:
         self.model.to(device)
 
         self.optimizer: Optimizer = optimizer
-        self.optimizer.to(device)
 
         self.metric = StructuralSimilarityIndexMeasure()
         """The metric of the training needs to create a score. This means it needs to 

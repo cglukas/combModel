@@ -19,6 +19,8 @@ from development.trainer.training_file_io import TrainingIO
 from development.trainer.visualizer import TrainVisualizer
 from development.trainer.training_logger import WandBLogger
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def _get_loaders(batch_size: int) -> list[DataLoader]:
     max_persons = 3
@@ -53,15 +55,11 @@ def _get_loaders(batch_size: int) -> list[DataLoader]:
     return [loader_0, loader_1, loader_2]
 
 
-def get_generic() -> DataLoader:
+def get_generic() -> PersonDataset:
     """Get a dataloader for the general human faces dataset."""
-    return DataLoader(
-        PersonDataset(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
-            device="cuda"
-        ),
-        batch_size=8,
-        shuffle=True,
+    return PersonDataset(
+        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
+        device=DEVICE,
     )
 
 
@@ -69,7 +67,7 @@ def get_test_set() -> PersonDataset:
     """Get a generic dataset with only 100 samples."""
     return TestDataSet(
         Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
-        device="cuda"
+        device=DEVICE,
     )
 
 
@@ -92,13 +90,14 @@ def main():
     #     batch_size=8,
     #     shuffle=True,
     # )
-    datasets = [get_test_set(), get_test_set()]
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    datasets = [get_generic(), get_generic()]
     model = CombModel(persons=len(datasets))
-    model.to(device)
+    model.to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
-    # manager = level_manager.ScoreGatedLevelManager(rate=blend_rate, min_score=0.95, max_level=8)
-    lvl_manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
+    lvl_manager = level_manager.ScoreGatedLevelManager(
+        rate=blend_rate, min_score=0.95, max_level=8
+    )
+    # lvl_manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
     dataset_manager = DatasetManager(datasets)
     logger = WandBLogger(
         project="combmodel",
@@ -121,7 +120,7 @@ def main():
         optimizer=optimizer,
         dataset_manager=dataset_manager,
         file_io=file_io,
-        device=device,
+        device=DEVICE,
         logger=logger,
         level_manager=lvl_manager,
     )

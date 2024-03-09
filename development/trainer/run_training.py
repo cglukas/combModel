@@ -6,10 +6,8 @@ from pathlib import Path
 import cv2
 import torch.cuda
 import wandb
-from torch.utils.data import DataLoader
 
 from development.data_io import dataloader
-from development.data_io.dataloader import SizeLoader
 from development.data_io.dataloader2 import PersonDataset, TestDataSet
 from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
@@ -20,39 +18,6 @@ from development.trainer.visualizer import TrainVisualizer
 from development.trainer.training_logger import WandBLogger
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def _get_loaders(batch_size: int) -> list[DataLoader]:
-    max_persons = 3
-    loader_0 = DataLoader(
-        SizeLoader(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-            max_persons=max_persons,
-            person=0,
-        ),
-        batch_size=batch_size,
-        shuffle=True,
-    )
-    loader_1 = DataLoader(
-        SizeLoader(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-            max_persons=max_persons,
-            person=1,
-        ),
-        batch_size=batch_size,
-        shuffle=True,
-    )
-
-    loader_2 = DataLoader(
-        SizeLoader(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-            max_persons=max_persons,
-            person=2,
-        ),
-        batch_size=batch_size,
-        shuffle=True,
-    )
-    return [loader_0, loader_1, loader_2]
 
 
 def get_generic() -> PersonDataset:

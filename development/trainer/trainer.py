@@ -66,13 +66,18 @@ class Trainer:
 
     def train(self):
         """Start the training process."""
-        while self.training:
-            self.epoch += 1
-            self.train_one_epoch()
-            if self.epoch % self.save_epochs == 1:
-                self.save()
-            # TODO: add stop condition if max level is reached.
-            self.level_manager.increase_level_and_blend(score=self.epoch_score)
+        try:
+            while self.training:
+                self.epoch += 1
+                self.train_one_epoch()
+                if self.epoch % self.save_epochs == 1:
+                    self.save()
+                # TODO: add stop condition if max level is reached.
+                self.level_manager.increase_level_and_blend(score=self.epoch_score)
+        finally:
+            # Allways save the last training state.
+            # TODO modify the file so that it can be differentiated from normal saves.
+            self.save()
 
     def save(self):
         """Save the model and optimizer.

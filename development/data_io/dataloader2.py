@@ -9,8 +9,6 @@ import torch
 import torchvision
 from torch.utils.data import Dataset
 
-from development.data_io.dataloader import SizeLoader
-
 
 class ImageSize(enum.IntEnum):
     """All possible image sizes for the comb model levels."""
@@ -95,11 +93,16 @@ class PersonDataset(Dataset):
         if matte_files:
             matte_path = matte_files[index]
             matte = PIL.Image.open(str(matte_path))
-            return transformed_img.to(self._device), self._transforms(matte).to(self._device)
-        return transformed_img.to(self._device), torch.ones(transformed_img.shape).to(self._device)
+            return transformed_img.to(self._device), self._transforms(matte).to(
+                self._device
+            )
+        return transformed_img.to(self._device), torch.ones(transformed_img.shape).to(
+            self._device
+        )
 
 
 class TestDataSet(PersonDataset):
     """Test dataset that only loads the first 100 images."""
+
     def __len__(self):
         return 100

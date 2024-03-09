@@ -1,3 +1,5 @@
+![tests](https://github.com/cglukas/combModel/actions/workflows/python-app.yml/badge.svg)
+![Code Style](https://github.com/cglukas/combModel/actions/workflows/pylint.yml/badge.svg)
 # Idea
 This project is a proof of concept for implementing and training the comb model from the [paper](https://studios.disneyresearch.com/2020/06/29/high-resolution-neural-face-swapping-for-visual-effects/).
 The interesting part of this deepfake model is the layer wise pretraining proposed in the paper. 

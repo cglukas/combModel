@@ -5,7 +5,6 @@ import torch.cuda
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
-from development.data_io.dataloader import SCALES, SizeLoader
 from development.data_io.dataloader2 import ImageSize, PersonDataset
 from development.model.comb_model import CombModel
 
@@ -26,10 +25,7 @@ def display_latent_encoding(
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # TODO remove once PersonLoader has no dependencies to this anymore.
-    SizeLoader.scale = SCALES[level]
-
-    model = CombModel(device=device, persons=2)
+    model = CombModel(persons=2)
     model.load_state_dict(torch.load(model_path))
     model.to(device)
 

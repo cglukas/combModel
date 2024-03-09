@@ -1,60 +1,37 @@
 """Module for training and validating the model."""
 import re
+from datetime import datetime
 from pathlib import Path
 
 import cv2
 import torch.cuda
 import wandb
-from torch.utils.data import DataLoader
 
-from development.data_io import dataloader
-from development.data_io.dataloader import SizeLoader
-from development.data_io.dataloader2 import PersonDataset
+from development.data_io.dataloader2 import ImageSize, PersonDataset, TestDataSet
+from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
-from development.trainer.training import TrainLogger, TrainVisualizer, Trainer
+from development.trainer import level_manager
+from development.trainer.trainer import Trainer
+from development.trainer.training_file_io import TrainingIO
+from development.trainer.visualizer import TrainVisualizer
+from development.trainer.training_logger import WandBLogger
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def _get_loaders(batch_size: int) -> list[DataLoader]:
-    max_persons = 3
-    loader_0 = DataLoader(
-        SizeLoader(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-            max_persons=max_persons,
-            person=0,
-        ),
-        batch_size=batch_size,
-        shuffle=True,
-    )
-    loader_1 = DataLoader(
-        SizeLoader(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-            max_persons=max_persons,
-            person=1,
-        ),
-        batch_size=batch_size,
-        shuffle=True,
-    )
-
-    loader_2 = DataLoader(
-        SizeLoader(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed"),
-            max_persons=max_persons,
-            person=2,
-        ),
-        batch_size=batch_size,
-        shuffle=True,
-    )
-    return [loader_0, loader_1, loader_2]
-
-
-def get_generic() -> DataLoader:
+def get_generic() -> PersonDataset:
     """Get a dataloader for the general human faces dataset."""
-    return DataLoader(
-        PersonDataset(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
-        ),
-        batch_size=8,
-        shuffle=True,
+    return PersonDataset(
+        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
+        device=DEVICE,
+    )
+
+
+def get_test_set() -> PersonDataset:
+    """Get a generic dataset with only 100 samples."""
+    return TestDataSet(
+        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
+        device=DEVICE,
     )
 
 
@@ -63,38 +40,54 @@ def main():
     ### Hyper parameter
     learning_rate = 10e-4  # 10e-4 is used in the disney research paper.
     blend_rate = 0.05
-    bruce = DataLoader(
-        PersonDataset(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
-        ),
-        batch_size=8,
-        shuffle=True,
-    )
-    michael = DataLoader(
-        PersonDataset(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
-        ),
-        batch_size=8,
-        shuffle=True,
-    )
-    loaders = [bruce, michael]
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CombModel(persons=len(loaders), device=device)
-    model.to(device)
+    # bruce = DataLoader(
+    #     PersonDataset(
+    #         Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
+    #     ),
+    #     batch_size=8,
+    #     shuffle=True,
+    # )
+    # michael = DataLoader(
+    #     PersonDataset(
+    #         Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
+    #     ),
+    #     batch_size=8,
+    #     shuffle=True,
+    # )
+    datasets = [get_generic(), get_generic()]
+    model = CombModel(persons=len(datasets))
+    model.to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
-
-    logger = TrainLogger(
-        learning_rate=learning_rate, blend_rate=blend_rate, optimizer=str(type(optimizer))
+    lvl_manager = level_manager.ScoreGatedLevelManager(
+        rate=blend_rate, min_score=0.95, max_level=8
     )
+    # lvl_manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
+    dataset_manager = DatasetManager(datasets)
+    logger = WandBLogger(
+        project="combmodel",
+        entity="cglukas",
+        learning_rate=learning_rate,
+        blend_rate=blend_rate,
+        optimizer=str(type(optimizer)),
+    )
+
+    start = datetime.now().strftime("%Y-%m-%d_%H_%M")
+    filepath = Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings") / f"{start}"
+    if not filepath.exists():
+        print(f"{filepath} created")
+        filepath.mkdir(exist_ok=True)
+    file_io = TrainingIO(model, optimizer, lvl_manager)
+    file_io.set_folder(filepath)
+
     trainer = Trainer(
         model=model,
         optimizer=optimizer,
-        dataloaders=loaders,
-        device=device,
-        max_level=4,
-        logger=logger
+        dataset_manager=dataset_manager,
+        file_io=file_io,
+        device=DEVICE,
+        logger=logger,
+        level_manager=lvl_manager,
     )
-    trainer.blend_rate = blend_rate
     trainer.train()
     wandb.finish()
 
@@ -109,15 +102,15 @@ def validate(model_state_dict: Path | str) -> None:
     level = int(match.group("level"))
     blend = float(match.group("blend"))
     loaders = [get_generic(), get_generic()]
-    dataloader.SizeLoader.scale = dataloader.SCALES[level]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CombModel(persons=len(loaders), device=device)
+    model = CombModel(persons=len(loaders))
     model.eval()
     model.to(device)
     state_dict = torch.load(model_state_dict)
     model.load_state_dict(state_dict)
     visualizer = TrainVisualizer()
     for person, loader in enumerate(loaders):
+        loader.set_scale(ImageSize.from_index(level))
         for sample in loader:
             image, _ = sample
             image = image.to(device)

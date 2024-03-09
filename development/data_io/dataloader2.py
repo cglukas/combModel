@@ -9,8 +9,6 @@ import torch
 import torchvision
 from torch.utils.data import Dataset
 
-from development.data_io.dataloader import SizeLoader
-
 
 class ImageSize(enum.IntEnum):
     """All possible image sizes for the comb model levels."""
@@ -35,7 +33,7 @@ class ImageSize(enum.IntEnum):
 class PersonDataset(Dataset):
     """Dataset for loading a single person dataset for the comb model."""
 
-    def __init__(self, folder: str | Path):
+    def __init__(self, folder: str | Path, device: torch.device = torch.device("cpu")):
         """Initialize the PersonDataset.
 
         Args:
@@ -44,6 +42,7 @@ class PersonDataset(Dataset):
         self._folder = Path(folder)
         self._transforms = torchvision.transforms.ToTensor()
         self._scale = ImageSize.LEVEL0
+        self._device = device
 
     def set_scale(self, scale: ImageSize) -> None:
         """Set the scale that should be loaded."""
@@ -86,9 +85,6 @@ class PersonDataset(Dataset):
         Returns:
             Tensor of the loaded image.
         """
-        # TODO remove this once the scale setting is implemented
-        self._scale = ImageSize(SizeLoader.scale)
-
         img_files = self._get_images_for_scale(self._scale)
         img_path = img_files[index]
         img = PIL.Image.open(str(img_path))
@@ -97,5 +93,16 @@ class PersonDataset(Dataset):
         if matte_files:
             matte_path = matte_files[index]
             matte = PIL.Image.open(str(matte_path))
-            return transformed_img, self._transforms(matte)
-        return transformed_img, torch.ones(transformed_img.shape)
+            return transformed_img.to(self._device), self._transforms(matte).to(
+                self._device
+            )
+        return transformed_img.to(self._device), torch.ones(transformed_img.shape).to(
+            self._device
+        )
+
+
+class TestDataSet(PersonDataset):
+    """Test dataset that only loads the first 100 images."""
+
+    def __len__(self):
+        return 100

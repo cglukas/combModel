@@ -1,3 +1,4 @@
+"""Module of the nuke model that is used for cat file conversion."""
 import torch
 from torch import nn
 

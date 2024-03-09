@@ -15,15 +15,13 @@ class CombModel(nn.Module):
         https://studios.disneyresearch.com/2020/06/29/high-resolution-neural-face-swapping-for-visual-effects/
     """
 
-    def __init__(self, persons: int = 2, device="cpu"):
+    def __init__(self, persons: int = 2):
         super().__init__()
         self.encoder = Encoder()
-        self.encoder.to(device)
         self.decoders = nn.ModuleList()
         self.latent: torch.Tensor
         for _ in range(persons):
             decoder = Decoder()
-            decoder.to(device)
             self.decoders.append(decoder)
 
     def forward(self):

@@ -9,12 +9,12 @@ from torch.utils.data import DataLoader
 
 from development.data_io import dataloader
 from development.data_io.dataloader import SizeLoader
-from development.data_io.dataloader2 import PersonDataset
+from development.data_io.dataloader2 import PersonDataset, TestDataSet
 from development.model.comb_model import CombModel
-from development.trainer.level_manager import ScoreGatedLevelManager
+from development.trainer import level_manager
 from development.trainer.trainer import Trainer
 from development.trainer.visualizer import TrainVisualizer
-from development.trainer.training_logger import TrainLogger, WandBLogger
+from development.trainer.training_logger import WandBLogger
 
 
 def _get_loaders(batch_size: int) -> list[DataLoader]:
@@ -61,6 +61,17 @@ def get_generic() -> DataLoader:
     )
 
 
+def get_test_set() -> DataLoader:
+    """Get a generic dataset with only 100 samples."""
+    return DataLoader(
+        TestDataSet(
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
+        ),
+        batch_size=8,
+        shuffle=True,
+    )
+
+
 def main():
     """Main training routine."""
     ### Hyper parameter
@@ -80,7 +91,7 @@ def main():
         batch_size=8,
         shuffle=True,
     )
-    loaders = [bruce, michael]
+    loaders = [get_test_set(), get_test_set()]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CombModel(persons=len(loaders), device=device)
     model.to(device)
@@ -93,7 +104,8 @@ def main():
         blend_rate=blend_rate,
         optimizer=str(type(optimizer)),
     )
-    manager = ScoreGatedLevelManager(rate=blend_rate, min_score=0.95, max_level=8)
+    # manager = level_manager.ScoreGatedLevelManager(rate=blend_rate, min_score=0.95, max_level=8)
+    manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
     trainer = Trainer(
         model=model,
         optimizer=optimizer,

@@ -49,10 +49,10 @@ def test_save_without_folder(save_patch: MagicMock, model_and_optim_mock: tuple[
 
     manager = LinearManager(rate=0.4)
     manager.level = 2
-    manager.blend = 0.5
+    manager.blend = 1
     test_folder = Path("testfolder")
-    expected_model_file = test_folder / "model_2_0.5.pth"
-    expected_optimizer_file = test_folder / "optim_2_0.5.pth"
+    expected_model_file = test_folder / "model_2_1.0.pth"
+    expected_optimizer_file = test_folder / "optim_2_1.0.pth"
 
     # This is the call to test:
     io_handler = TrainingIO(model, optimizer, manager)

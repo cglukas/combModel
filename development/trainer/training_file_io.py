@@ -75,4 +75,6 @@ class TrainingIO:
 
     def _get_lvl_blend_string(self) -> str:
         """Get the level and blend formatted for the filepaths."""
-        return f"{self._level_manager.level}_{self._level_manager.blend}"
+        return (
+            f"{self._level_manager.level}_{round(float(self._level_manager.blend), 2)}"
+        )

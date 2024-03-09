@@ -99,7 +99,8 @@ class Trainer:
         last_images = {}
         for i, samples in enumerate(self.dataset_manager.iter_batches(), start=1):
             self.visualizer.clear()
-
+            if i % 100 == 0:
+                print(f"Epoch progress: {self.dataset_manager.epoch_percent * 100}%")
             for person, single_sample in enumerate(samples):
                 self.current_person = person
                 test_img = single_sample[0][0]

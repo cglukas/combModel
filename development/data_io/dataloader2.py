@@ -35,7 +35,7 @@ class ImageSize(enum.IntEnum):
 class PersonDataset(Dataset):
     """Dataset for loading a single person dataset for the comb model."""
 
-    def __init__(self, folder: str | Path):
+    def __init__(self, folder: str | Path, device: torch.device):
         """Initialize the PersonDataset.
 
         Args:
@@ -44,6 +44,7 @@ class PersonDataset(Dataset):
         self._folder = Path(folder)
         self._transforms = torchvision.transforms.ToTensor()
         self._scale = ImageSize.LEVEL0
+        self._device = device
 
     def set_scale(self, scale: ImageSize) -> None:
         """Set the scale that should be loaded."""
@@ -97,8 +98,8 @@ class PersonDataset(Dataset):
         if matte_files:
             matte_path = matte_files[index]
             matte = PIL.Image.open(str(matte_path))
-            return transformed_img, self._transforms(matte)
-        return transformed_img, torch.ones(transformed_img.shape)
+            return transformed_img.to(self._device), self._transforms(matte).to(self._device)
+        return transformed_img.to(self._device), torch.ones(transformed_img.shape).to(self._device)
 
 
 class TestDataSet(PersonDataset):

@@ -63,14 +63,11 @@ def get_generic() -> DataLoader:
     )
 
 
-def get_test_set() -> DataLoader:
+def get_test_set() -> PersonDataset:
     """Get a generic dataset with only 100 samples."""
-    return DataLoader(
-        TestDataSet(
-            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
-        ),
-        batch_size=8,
-        shuffle=True,
+    return TestDataSet(
+        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
+        device="cuda"
     )
 
 

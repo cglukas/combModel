@@ -95,7 +95,7 @@ def main():
     )
     loaders = [get_test_set(), get_test_set()]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CombModel(persons=len(loaders), device=device)
+    model = CombModel(persons=len(loaders))
     model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
     # manager = level_manager.ScoreGatedLevelManager(rate=blend_rate, min_score=0.95, max_level=8)

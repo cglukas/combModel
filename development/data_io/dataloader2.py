@@ -99,3 +99,9 @@ class PersonDataset(Dataset):
             matte = PIL.Image.open(str(matte_path))
             return transformed_img, self._transforms(matte)
         return transformed_img, torch.ones(transformed_img.shape)
+
+
+class TestDataSet(PersonDataset):
+    """Test dataset that only loads the first 100 images."""
+    def __len__(self):
+        return 100

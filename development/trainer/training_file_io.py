@@ -29,14 +29,21 @@ class TrainingIO:
         self._model = model
         self._optimizer = optimizer
         self._level_manager = level_manager
+        self._folder: Path | None = None
 
-    def save(self, folder: Path):
+    def set_folder(self, folder: Path):
+        """Set the fallback folder for saving."""
+        self._folder = folder
+
+    def save(self, folder: Path | None = None):
         """Save the model and optimizer.
 
         Args:
             folder: folder where the files should be saved.
         """
+        folder = folder or self._folder
         model_file = folder / f"model_{self._get_lvl_blend_string()}.pth"
+        # TODO [cglukas]: Model needs to be brought back to cpu before saving.
         torch.save(self._model.state_dict(), str(model_file))
 
         optim_file = folder / f"optim_{self._get_lvl_blend_string()}.pth"

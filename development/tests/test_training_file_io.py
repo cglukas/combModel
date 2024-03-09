@@ -42,6 +42,27 @@ def test_save(save_patch: MagicMock, model_and_optim_mock: tuple[MagicMock, Magi
     save_patch.assert_any_call(optimizer.state_dict(), str(expected_optimizer_file))
 
 
+@patch("torch.save")
+def test_save_without_folder(save_patch: MagicMock, model_and_optim_mock: tuple[MagicMock, MagicMock]):
+    """Test that the save method will call torch.save with the model state and the expected filepath."""
+    model, optimizer = model_and_optim_mock
+
+    manager = LinearManager(rate=0.4)
+    manager.level = 2
+    manager.blend = 0.5
+    test_folder = Path("testfolder")
+    expected_model_file = test_folder / "model_2_0.5.pth"
+    expected_optimizer_file = test_folder / "optim_2_0.5.pth"
+
+    # This is the call to test:
+    io_handler = TrainingIO(model, optimizer, manager)
+    io_handler.set_folder(test_folder)
+    io_handler.save()
+
+    save_patch.assert_any_call(model.state_dict(), str(expected_model_file))
+    save_patch.assert_any_call(optimizer.state_dict(), str(expected_optimizer_file))
+
+
 @patch("torch.load")
 def test_load(load_patch: MagicMock, model_and_optim_mock: tuple[MagicMock, MagicMock]):
     """Test that the load method will call torch.load.

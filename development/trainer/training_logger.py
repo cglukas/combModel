@@ -20,7 +20,9 @@ class TrainLogger:
             epoch: Current epoch of teh training.
         """
         print(
-            f"Time: {datetime.now().strftime('%H:%M:%S')}, Level {level} - {blend}, rate: {blend_rate}, score: {score}"
+            f"Time: {datetime.now().strftime('%H:%M:%S')}, "
+            f"Epoch {epoch}, Level {level} - {blend}, "
+            f"rate: {blend_rate}, score: {score}"
         )
 
     @staticmethod
@@ -35,7 +37,6 @@ class TrainLogger:
             epoch: Current epoch that will be used for associating the image with
                    the model progress.
         """
-        pass
 
 
 class WandBLogger(TrainLogger):

@@ -1,3 +1,4 @@
+"""Module for the training visualizer."""
 from typing import List
 
 import cv2

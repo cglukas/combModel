@@ -1,3 +1,4 @@
+"""Tests for the nuke model."""
 import torch
 
 from development.model.comb_model import CombModel

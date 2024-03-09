@@ -16,7 +16,6 @@ class AbstractLevelManager(ABC):
         Args:
             score: (optional) score between 0 (bad) and 1 (good).
         """
-        pass
 
 
 class LinearManager(AbstractLevelManager):

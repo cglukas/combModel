@@ -54,7 +54,7 @@ def main():
     #     batch_size=8,
     #     shuffle=True,
     # )
-    datasets = [get_generic(), get_generic()]
+    datasets = [get_generic()]
     model = CombModel(persons=len(datasets))
     model.to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)

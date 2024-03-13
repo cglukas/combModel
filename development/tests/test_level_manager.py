@@ -47,6 +47,8 @@ def test_score_gated_manager():
 def test_score_gated_level_manager():
     """Test if the level is only increased if the score is high enough."""
     manager = ScoreGatedLevelManager(rate=1, min_score=0.9)
+    manager.level = 0
+    manager.blend = 1
 
     manager.increase_level_and_blend(score=0)
     assert manager.level == 0
@@ -55,3 +57,25 @@ def test_score_gated_level_manager():
     manager.increase_level_and_blend(score=0.9)
     assert manager.level == 1
     assert manager.blend == 0
+
+
+def test_score_gated_level_manager_max_repeat():
+    """Test that the manager continues when the increase method got called x times."""
+    manager = ScoreGatedLevelManager(rate=1, min_score=0.9, max_repeat=2)
+    manager.level = 0
+    manager.blend = 1
+
+    # Two allowed repetitions:
+    manager.increase_level_and_blend(score=0)
+    manager.increase_level_and_blend(score=0)
+
+    assert manager.level == 0
+    assert manager.blend == 1
+
+    # Third call:
+    manager.increase_level_and_blend(score=0)
+
+    assert manager.level == 1
+    assert manager.blend == 0
+
+

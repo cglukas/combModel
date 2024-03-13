@@ -81,18 +81,27 @@ class ScoreGatedManager(AbstractLevelManager):
 class ScoreGatedLevelManager(AbstractLevelManager):
     """A special manager that blends with a constant rate and only increases levels if the score is high enough."""
 
-    def __init__(self, rate: float, min_score: float, max_level: int = 8):
+    def __init__(
+        self,
+        rate: float,
+        min_score: float,
+        max_level: int = 8,
+        max_repeat: int | None = None,
+    ):
         """Initialize the manager.
 
         Args:
             rate: constant blend rate used in between levels.
             min_score: minimum score that needs to be reached before the level is increased.
             max_level: highest level that can be reached.
+            max_repeat: (optional) amount of repetitions until the level will be increased anyway.
         """
         super().__init__()
+        self._repeat = 0
         self._blend_rate = rate
         self._min_score = min_score
         self._max_level = max_level
+        self._max_repeat = max_repeat
 
     def increase_level_and_blend(self, score: float = 1.0):
         """Increase the level and blend.
@@ -106,6 +115,18 @@ class ScoreGatedLevelManager(AbstractLevelManager):
         """
         self.blend += self._blend_rate
         self.blend = min(self.blend, 1)
-        if self.blend == 1 and score >= self._min_score:
-            self.blend = 0
-            self.level = min(self._max_level, self.level + 1)
+        if self.blend < 1:
+            return
+
+        if score < self._min_score:
+            if self._max_repeat is None:
+                # Only consider repetitions when max_repeat is set
+                return
+
+            self._repeat += 1
+            if self._repeat <= self._max_repeat:
+                return
+
+        self._repeat = 0
+        self.blend = 0
+        self.level = min(self._max_level, self.level + 1)

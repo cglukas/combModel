@@ -6,6 +6,7 @@ from pathlib import Path
 import cv2
 import torch.cuda
 import wandb
+from adabelief_pytorch import AdaBelief
 
 from development.data_io.dataloader2 import ImageSize, PersonDataset, TestDataSet
 from development.data_io.dataset_manager import DatasetManager
@@ -58,8 +59,9 @@ def main():
     model = CombModel(persons=len(datasets))
     model.to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+    optimizer = adabelief_gan_small(model)
     lvl_manager = level_manager.ScoreGatedLevelManager(
-        rate=blend_rate, min_score=0.95, max_level=8
+        rate=blend_rate, min_score=0.95, max_level=8, max_repeat=10
     )
     # lvl_manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
     dataset_manager = DatasetManager(datasets)
@@ -90,6 +92,20 @@ def main():
     )
     trainer.train()
     wandb.finish()
+
+
+def adabelief_gan_small(model) -> AdaBelief:
+    """Get a AdaBelief instance for the model with the GAN(small) settings applied."""
+    return AdaBelief(
+        model.parameters(),
+        lr=6e-5,
+        betas=(0.5, 0.999),
+        eps=1e-12,
+        weight_decay=0,
+        weight_decouple=True,
+        rectify=False,
+        fixed_decay=False,
+    )
 
 
 def validate(model_state_dict: Path | str) -> None:

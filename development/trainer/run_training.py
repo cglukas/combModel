@@ -80,6 +80,7 @@ def main():
         filepath.mkdir(exist_ok=True)
     file_io = TrainingIO(model, optimizer, lvl_manager)
     file_io.set_folder(filepath)
+    file_io.load(Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings\2024-03-14_10_44\model_6_0.6.pth"))
 
     trainer = Trainer(
         model=model,
@@ -98,7 +99,7 @@ def adabelief_gan_small(model) -> AdaBelief:
     """Get a AdaBelief instance for the model with the GAN(small) settings applied."""
     return AdaBelief(
         model.parameters(),
-        lr=6e-5,
+        lr=6e-5,  # Changed from 2e-5
         betas=(0.5, 0.999),
         eps=1e-12,
         weight_decay=0,

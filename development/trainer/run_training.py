@@ -6,6 +6,7 @@ from pathlib import Path
 import cv2
 import torch.cuda
 import wandb
+from adabelief_pytorch import AdaBelief
 
 from development.data_io.dataloader2 import ImageSize, PersonDataset, TestDataSet
 from development.data_io.dataset_manager import DatasetManager
@@ -40,26 +41,23 @@ def main():
     ### Hyper parameter
     learning_rate = 10e-4  # 10e-4 is used in the disney research paper.
     blend_rate = 0.05
-    # bruce = DataLoader(
-    #     PersonDataset(
-    #         Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
-    #     ),
-    #     batch_size=8,
-    #     shuffle=True,
-    # )
-    # michael = DataLoader(
-    #     PersonDataset(
-    #         Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
-    #     ),
-    #     batch_size=8,
-    #     shuffle=True,
-    # )
-    datasets = [get_generic()]
-    model = CombModel(persons=len(datasets))
+    bruce = PersonDataset(
+        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
+        device=DEVICE,
+    )
+    michael = PersonDataset(
+        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
+        device=DEVICE,
+    )
+    datasets = [bruce, michael]
+    model = CombModel(
+        persons=len(datasets)
+    )
     model.to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+    # optimizer = adabelief_gan_small(model)
     lvl_manager = level_manager.ScoreGatedLevelManager(
-        rate=blend_rate, min_score=0.95, max_level=8
+        rate=blend_rate, min_score=0.95, max_level=8, max_repeat=10
     )
     # lvl_manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
     dataset_manager = DatasetManager(datasets)
@@ -78,6 +76,7 @@ def main():
         filepath.mkdir(exist_ok=True)
     file_io = TrainingIO(model, optimizer, lvl_manager)
     file_io.set_folder(filepath)
+    file_io.load(Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings\2024-03-14_21_18\model_3_0.25.pth"))
 
     trainer = Trainer(
         model=model,
@@ -90,6 +89,20 @@ def main():
     )
     trainer.train()
     wandb.finish()
+
+
+def adabelief_gan_small(model) -> AdaBelief:
+    """Get a AdaBelief instance for the model with the GAN(small) settings applied."""
+    return AdaBelief(
+        model.parameters(),
+        lr=2e-5,  # Changed from 2e-5
+        betas=(0.5, 0.999),
+        eps=1e-12,
+        weight_decay=0,
+        weight_decouple=True,
+        rectify=False,
+        fixed_decay=False,
+    )
 
 
 def validate(model_state_dict: Path | str) -> None:

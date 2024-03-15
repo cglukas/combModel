@@ -2,7 +2,6 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import adabelief_pytorch.AdaBelief
 import pytest
 import torch
 from adabelief_pytorch import AdaBelief
@@ -13,6 +12,7 @@ from development.trainer.configured_training import (
     TrainingConfig,
     _init_model_and_optimizer,
     _load_datasets,
+    _load_level_manager,
 )
 
 
@@ -37,6 +37,37 @@ def test_load_datasets_empty() -> None:
 
     with pytest.raises(ValueError, match="No datasets provided."):
         _load_datasets(conf)
+
+
+@pytest.mark.parametrize(
+    "config_values",
+    [
+        {"rate": 0.05, "min_score": 0},
+        {"rate": 0.05, "min_score": 0.9},
+        {"rate": 0.05, "min_score": 0, "max_level": 4},
+        {"rate": 0.1, "min_score": 0.5, "max_level": 6},
+        {"rate": 0.05, "min_score": 0, "max_level": 4, "max_repeat": 8},
+        {"rate": 0.05, "min_score": 0, "max_level": 4, "max_repeat": 12},
+    ],
+)
+@patch("development.trainer.configured_training.ScoreGatedLevelManager")
+def test_load_level_manager(manager: MagicMock, config_values: dict) -> None:
+    """Test that the level manager will be initialized with the config values."""
+    conf = TrainingConfig(level_manager_config=config_values)
+
+    _load_level_manager(conf)
+
+    manager.assert_called_with(**config_values)
+
+
+@patch("development.trainer.configured_training.ScoreGatedLevelManager")
+def test_load_level_manager_defaults(manager: MagicMock) -> None:
+    """Test that the level manager will be initialized with the config values."""
+    conf = TrainingConfig()
+
+    _load_level_manager(conf)
+
+    manager.assert_called_with(rate=0.05, min_score=0)
 
 
 class TestInitModelAndOptimizer:

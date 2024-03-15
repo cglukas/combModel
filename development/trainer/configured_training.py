@@ -3,6 +3,7 @@ import inspect
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import click
 import torch
 import yaml
 from adabelief_pytorch import AdaBelief
@@ -20,9 +21,14 @@ from development.trainer.training_file_io import TrainingIO
 from development.trainer.training_logger import TrainLogger, WandBLogger
 
 
+class ConfigError(Exception):
+    """Exception for all configuration related issues."""
+
+
 @dataclass
 class TrainingConfig:
     """Dataclass for the training configuration."""
+
     name: str = ""
     """Optional name for the training configuration."""
     optimizer: str = "SGD"
@@ -91,7 +97,7 @@ def _get_optimizer(config: TrainingConfig, model: CombModel) -> Optimizer:
         )
     else:
         msg = f"Optimizer wrong: '{config.optimizer}'. Possible optimizer: 'SGD', 'AdaBelief'."
-        raise ValueError(msg)
+        raise ConfigError(msg)
     return optimizer
 
 
@@ -123,7 +129,7 @@ def _load_level_manager(config: TrainingConfig) -> ScoreGatedLevelManager:
     if argument_mismatch:
         wrong_args = [f"'{arg}'" for arg in argument_mismatch]
         msg = f"Wrong config values provided: {','.join(wrong_args)}."
-        raise ValueError(msg)
+        raise ConfigError(msg)
 
     defaults.update(manager_config)
     return ScoreGatedLevelManager(**defaults)
@@ -133,7 +139,7 @@ def _load_datasets(config: TrainingConfig) -> DatasetManager:
     """Load the datasets from the config."""
     if len(config.datasets) == 0:
         msg = "No datasets provided."
-        raise ValueError(msg)
+        raise ConfigError(msg)
     datasets = []
     device = torch.device(config.device)
     for path in config.datasets:
@@ -162,7 +168,7 @@ def _run_training(config: TrainingConfig) -> None:
         msg = (
             "Resuming with pretrained checkpoint does not work. Only provide one value."
         )
-        raise ValueError(msg)
+        raise ConfigError(msg)
     dataset_manager = _load_datasets(config)
     level_manager = _load_level_manager(config)
     if config.pretraining_checkpoint:
@@ -189,4 +195,34 @@ def _run_training(config: TrainingConfig) -> None:
         level_manager=level_manager,
     )
 
-    trainer.train()
+    print(f"Run training for {config.name}")
+    # trainer.train()
+
+
+@click.command("Run Training")
+@click.option(
+    "--raise-error",
+    help="Will raise configuration errors and won't skip invalid configs.",
+    default=False,
+    is_flag=True,
+)
+@click.argument("config_files", nargs=-1, type=str)
+def run_training(config_files: list[str], raise_error: bool):
+    """Run the training loop for the training configs the config file."""
+    all_configs: list[TrainingConfig] = []
+
+    for c_file in config_files:
+        with open(c_file) as file:
+            all_configs.extend(_yml_to_config(file.read()))
+
+    for single_config in all_configs:
+        try:
+            _run_training(single_config)
+        except ConfigError as e:
+            if raise_error:
+                raise e
+            print(f"Skipping config: '{single_config.name}' because of error: \n {e}")
+
+
+if __name__ == "__main__":
+    run_training()

@@ -10,6 +10,7 @@ from adabelief_pytorch import AdaBelief
 from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
 from development.trainer.configured_training import (
+    ConfigError,
     TrainingConfig,
     _init_model_and_optimizer,
     _load_datasets,
@@ -41,7 +42,7 @@ def test_load_datasets_empty() -> None:
     """Test that empty dataset lists will raise an error."""
     conf = TrainingConfig()
 
-    with pytest.raises(ValueError, match="No datasets provided."):
+    with pytest.raises(ConfigError, match="No datasets provided."):
         _load_datasets(conf)
 
 
@@ -90,7 +91,7 @@ def test_load_level_manager_wrong_config(manager: MagicMock) -> None:
     """Test if a value Error is raised if the config contains wrong values."""
     conf = TrainingConfig(level_manager_config={"wrong": 9})
 
-    with pytest.raises(ValueError, match="Wrong config values provided: 'wrong'."):
+    with pytest.raises(ConfigError, match="Wrong config values provided: 'wrong'."):
         _load_level_manager(conf)
 
     manager.assert_not_called()
@@ -236,7 +237,7 @@ class TestInitModelAndOptimizer:
         wrong_conf = TrainingConfig(datasets=["1", "2"], optimizer="WrongOptimizer")
 
         with pytest.raises(
-            ValueError,
+            ConfigError,
             match="Optimizer wrong: 'WrongOptimizer'. Possible optimizer: 'SGD', 'AdaBelief'",
         ):
             _init_model_and_optimizer(wrong_conf)
@@ -294,7 +295,7 @@ def test_run_training_wrong_config():
     """Test that resume and pretrain checkpoint together will raise an error."""
     conf = TrainingConfig(resume_checkpoint="test", pretraining_checkpoint="test")
     with pytest.raises(
-        ValueError,
+        ConfigError,
         match="Resuming with pretrained checkpoint does not work. Only provide one value.",
     ):
         _run_training(conf)

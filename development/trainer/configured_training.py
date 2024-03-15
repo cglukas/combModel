@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import torch
+import yaml
 from adabelief_pytorch import AdaBelief
 from torch.optim import Optimizer
 
@@ -12,16 +13,18 @@ from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
 from development.model.utils import initialize_comb_model_from_pretraining
 from development.trainer.level_manager import (
-    AbstractLevelManager,
     ScoreGatedLevelManager,
 )
+from development.trainer.trainer import Trainer
+from development.trainer.training_file_io import TrainingIO
 from development.trainer.training_logger import TrainLogger, WandBLogger
 
 
 @dataclass
 class TrainingConfig:
     """Dataclass for the training configuration."""
-
+    name: str = ""
+    """Optional name for the training configuration."""
     optimizer: str = "SGD"
     """Optimizer class to use. Possible values: 'SGD', 'AdaBelief'. Will not be used when training is resumed."""
     learning_rate: float = 10e-4
@@ -40,12 +43,6 @@ class TrainingConfig:
     """Configuration for the level management. See the documentation for the ScoreGatedLevelManager."""
     wandb: dict[str, str] = field(default_factory=dict)
     """Configuration for tracking the training with weights and biases. (see wandb.ai)"""
-
-
-def _resume_training(
-    config: TrainingConfig,
-) -> tuple[CombModel, Optimizer, AbstractLevelManager]:
-    pass
 
 
 def _init_model_and_optimizer(config: TrainingConfig) -> tuple[CombModel, Optimizer]:
@@ -142,3 +139,18 @@ def _load_datasets(config: TrainingConfig) -> DatasetManager:
     for path in config.datasets:
         datasets = PersonDataset(path, device=device)
     return DatasetManager(datasets=datasets)
+
+
+def _yml_to_config(yml_text: str) -> list[TrainingConfig]:
+    """Convert a yaml style text to the training config.
+
+    Args:
+        yml_text: yaml style configuration values.
+
+    Returns:
+        Initialized configuration.
+    """
+    all_configs = []
+    for config in yaml.safe_load_all(yml_text):
+        all_configs.append(TrainingConfig(**config))
+    return all_configs

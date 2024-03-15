@@ -15,7 +15,7 @@ from development.trainer.level_manager import (
     AbstractLevelManager,
     ScoreGatedLevelManager,
 )
-from development.trainer.training_logger import TrainLogger
+from development.trainer.training_logger import TrainLogger, WandBLogger
 
 
 @dataclass
@@ -36,6 +36,8 @@ class TrainingConfig:
     """The list of datasets that should be considered for training."""
     level_manager_config: dict[str, float] = field(default_factory=dict)
     """Configuration for the level management. See the documentation for the ScoreGatedLevelManager."""
+    wandb: dict[str, str] = field(default_factory=dict)
+    """Configuration for tracking the training with weights and biases. (see wandb.ai)"""
 
 
 def _resume_training(
@@ -95,7 +97,18 @@ def _get_optimizer(config: TrainingConfig, model: CombModel) -> Optimizer:
 
 
 def _load_logger(config: TrainingConfig) -> TrainLogger:
-    pass
+    """Get a logger for the training."""
+    if config.wandb:
+        if "project" not in config.wandb or "user" not in config.wandb:
+            raise ValueError("Can only log to W&B with user and project provided.")
+        return WandBLogger(
+            project=config.wandb["project"],
+            entity=config.wandb["user"],
+            learning_rate=config.learning_rate,
+            blend_rate=0,
+            optimizer=config.optimizer,
+        )
+    return TrainLogger()
 
 
 def _load_level_manager(config: TrainingConfig) -> ScoreGatedLevelManager:

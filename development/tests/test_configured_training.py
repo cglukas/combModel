@@ -4,6 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
+
+import development.trainer.configured_training
+import wandb
 from adabelief_pytorch import AdaBelief
 
 from development.data_io.dataset_manager import DatasetManager
@@ -13,8 +16,10 @@ from development.trainer.configured_training import (
     _init_model_and_optimizer,
     _load_datasets,
     _load_level_manager,
+    _load_logger,
 )
 from development.trainer.level_manager import ScoreGatedLevelManager
+from development.trainer.training_logger import TrainLogger, WandBLogger
 
 
 @pytest.mark.parametrize("datasets", [["test", "test2"], ["test"]])
@@ -89,6 +94,27 @@ def test_load_level_manager_wrong_config(manager: MagicMock) -> None:
         _load_level_manager(conf)
 
     manager.assert_not_called()
+
+
+def test_load_logger() -> None:
+    """Test that a default logger is returned."""
+    conf = TrainingConfig()
+
+    assert isinstance(_load_logger(conf), TrainLogger)
+
+
+@patch("development.trainer.configured_training.WandBLogger")
+def test_load_logger_with_wandb_config(wandb_logger_mock: MagicMock) -> None:
+    """Test if a wandb logger is loaded if the wandb config are provided."""
+    conf = TrainingConfig(wandb={"project": "test", "user": "me"})
+    logger_mock = MagicMock(autospec=WandBLogger)
+    wandb_logger_mock.return_value = logger_mock
+
+    logger = _load_logger(conf)
+
+    assert logger is logger_mock
+    assert wandb_logger_mock.call_args.kwargs["project"] == "test"
+    assert wandb_logger_mock.call_args.kwargs["entity"] == "me"
 
 
 class TestInitModelAndOptimizer:

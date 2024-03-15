@@ -15,6 +15,7 @@ from development.trainer.configured_training import (
     _load_datasets,
     _load_level_manager,
     _load_logger,
+    _run_training,
     _yml_to_config,
 )
 from development.trainer.level_manager import ScoreGatedLevelManager
@@ -287,3 +288,13 @@ class TestYamlConfigParsing:
         """Test each config one by one."""
         loaded_config = self._loaded_configs[index]
         assert loaded_config == self._EXPECTED_CONFIGS[index]
+
+
+def test_run_training_wrong_config():
+    """Test that resume and pretrain checkpoint together will raise an error."""
+    conf = TrainingConfig(resume_checkpoint="test", pretraining_checkpoint="test")
+    with pytest.raises(
+        ValueError,
+        match="Resuming with pretrained checkpoint does not work. Only provide one value.",
+    ):
+        _run_training(conf)

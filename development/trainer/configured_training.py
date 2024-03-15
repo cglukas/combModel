@@ -154,3 +154,39 @@ def _yml_to_config(yml_text: str) -> list[TrainingConfig]:
     for config in yaml.safe_load_all(yml_text):
         all_configs.append(TrainingConfig(**config))
     return all_configs
+
+
+def _run_training(config: TrainingConfig) -> None:
+    """Run the training based on the config."""
+    if config.resume_checkpoint and config.pretraining_checkpoint:
+        msg = (
+            "Resuming with pretrained checkpoint does not work. Only provide one value."
+        )
+        raise ValueError(msg)
+    dataset_manager = _load_datasets(config)
+    level_manager = _load_level_manager(config)
+    if config.pretraining_checkpoint:
+        model, optimizer = _init_model_and_optimizer(config)
+    else:
+        model = CombModel(persons=len(config.datasets))
+        optimizer = _get_optimizer(config, model)
+    training_io = TrainingIO(model, optimizer, level_manager)
+
+    if config.resume_checkpoint:
+        training_io.load(Path(config.resume_checkpoint))
+
+    logger = _load_logger(config)
+    device = torch.device(config.device)
+    model.to(device)
+
+    trainer = Trainer(
+        model=model,
+        optimizer=optimizer,
+        dataset_manager=dataset_manager,
+        file_io=training_io,
+        device=device,
+        logger=logger,
+        level_manager=level_manager,
+    )
+
+    trainer.train()

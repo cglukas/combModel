@@ -1,4 +1,5 @@
 """File for training based on configuration files."""
+import inspect
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -33,7 +34,7 @@ class TrainingConfig:
     """The device where the training should run on."""
     datasets: list[str] = field(default_factory=list)
     """The list of datasets that should be considered for training."""
-    level_manager_config: dict[str, str | float] = field(default_factory=dict)
+    level_manager_config: dict[str, float] = field(default_factory=dict)
     """Configuration for the level management. See the documentation for the ScoreGatedLevelManager."""
 
 
@@ -100,7 +101,19 @@ def _load_logger(config: TrainingConfig) -> TrainLogger:
 def _load_level_manager(config: TrainingConfig) -> ScoreGatedLevelManager:
     """Initialize the level manager with the config values."""
     defaults = {"rate": 0.05, "min_score": 0}
-    defaults.update(config.level_manager_config)
+    manager_config = config.level_manager_config
+
+    allowed_args = inspect.getfullargspec(ScoreGatedLevelManager).args
+    if "self" in allowed_args:
+        allowed_args.remove("self")  # self is the class reference.
+
+    argument_mismatch = set(manager_config.keys()).difference(set(allowed_args))
+    if argument_mismatch:
+        wrong_args = [f"'{arg}'" for arg in argument_mismatch]
+        msg = f"Wrong config values provided: {','.join(wrong_args)}."
+        raise ValueError(msg)
+
+    defaults.update(manager_config)
     return ScoreGatedLevelManager(**defaults)
 
 

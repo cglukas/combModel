@@ -14,6 +14,7 @@ from development.trainer.configured_training import (
     _load_datasets,
     _load_level_manager,
 )
+from development.trainer.level_manager import ScoreGatedLevelManager
 
 
 @pytest.mark.parametrize("datasets", [["test", "test2"], ["test"]])
@@ -50,7 +51,10 @@ def test_load_datasets_empty() -> None:
         {"rate": 0.05, "min_score": 0, "max_level": 4, "max_repeat": 12},
     ],
 )
-@patch("development.trainer.configured_training.ScoreGatedLevelManager")
+@patch(
+    "development.trainer.configured_training.ScoreGatedLevelManager",
+    autospec=ScoreGatedLevelManager,
+)
 def test_load_level_manager(manager: MagicMock, config_values: dict) -> None:
     """Test that the level manager will be initialized with the config values."""
     conf = TrainingConfig(level_manager_config=config_values)
@@ -60,7 +64,10 @@ def test_load_level_manager(manager: MagicMock, config_values: dict) -> None:
     manager.assert_called_with(**config_values)
 
 
-@patch("development.trainer.configured_training.ScoreGatedLevelManager")
+@patch(
+    "development.trainer.configured_training.ScoreGatedLevelManager",
+    autospec=ScoreGatedLevelManager,
+)
 def test_load_level_manager_defaults(manager: MagicMock) -> None:
     """Test that the level manager will be initialized with the config values."""
     conf = TrainingConfig()
@@ -68,6 +75,20 @@ def test_load_level_manager_defaults(manager: MagicMock) -> None:
     _load_level_manager(conf)
 
     manager.assert_called_with(rate=0.05, min_score=0)
+
+
+@patch(
+    "development.trainer.configured_training.ScoreGatedLevelManager",
+    autospec=ScoreGatedLevelManager,
+)
+def test_load_level_manager_wrong_config(manager: MagicMock) -> None:
+    """Test if a value Error is raised if the config contains wrong values."""
+    conf = TrainingConfig(level_manager_config={"wrong": 9})
+
+    with pytest.raises(ValueError, match="Wrong config values provided: 'wrong'."):
+        _load_level_manager(conf)
+
+    manager.assert_not_called()
 
 
 class TestInitModelAndOptimizer:

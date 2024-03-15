@@ -1,0 +1,516 @@
+#! C:/Program Files/Nuke14.0v3/nuke-14.0.3.dll -nx
+version 14.0 v3
+Gizmo {
+addUserKnob {20 tracking}
+addUserKnob {41 forehead T controller.forehead}
+addUserKnob {41 chin T controller.chin}
+addUserKnob {41 size l "Inference Pixel Size" T controller.size}
+addUserKnob {6 showGuide l "Show Align Guide" +STARTLINE}
+addUserKnob {20 faceTransform l "Face Transform"}
+addUserKnob {41 translate T controller.translate}
+addUserKnob {41 rotate T controller.rotate}
+addUserKnob {41 scale_1 l scale T controller.scale_1}
+addUserKnob {41 skewX l "skew X" T controller.skewX}
+addUserKnob {41 skewY l "skew Y" T controller.skewY}
+addUserKnob {20 infrerence l Inference}
+addUserKnob {41 useGPUIfAvailable l "Use GPU if available" T Inference4.useGPUIfAvailable}
+addUserKnob {41 modelFile l "Model File" T Inference4.modelFile}
+addUserKnob {6 optimize4mem l "Optimize for Speed and Memory" +STARTLINE}
+}
+BackdropNode {
+inputs 0
+name BackdropNode1
+tile_color 0x388e8e00
+label "Face Guide"
+note_font_size 42
+xpos -1159
+ypos -124
+appearance Border
+bdwidth 381
+bdheight 498
+}
+Input {
+inputs 0
+name Input1
+xpos -347
+ypos 412
+}
+set Nd294bc00 [stack 0]
+NoOp {
+name controller
+xpos -485
+ypos 412
+addUserKnob {20 User}
+addUserKnob {12 forehead}
+forehead {663 620}
+addUserKnob {12 chin}
+chin {585 289}
+addUserKnob {3 size}
+size 64
+addUserKnob {20 math}
+addUserKnob {12 pointUp l "point up" +INVISIBLE}
+pointUp {{forehead-chin} {forehead-chin}}
+addUserKnob {12 right +INVISIBLE}
+right {{"pointUp.y * 0.5"} {"-pointUp.x * 0.5"}}
+addUserKnob {12 left +INVISIBLE}
+left {{"-pointUp.y * 0.5"} {"pointUp.x * 0.5"}}
+addUserKnob {20 face l "Face adjustments"}
+addUserKnob {41 translate T Transform7.translate}
+addUserKnob {41 rotate T Transform7.rotate}
+addUserKnob {41 scale_1 l scale T Transform7.scale}
+addUserKnob {41 skewX l "skew X" T Transform7.skewX}
+addUserKnob {41 skewY l "skew Y" T Transform7.skewY}
+}
+Constant {
+inputs 0
+channels rgb
+format "256 256 0 0 256 256 1 square_256"
+name Constant1
+xpos -1017
+ypos -44
+}
+Dot {
+name Dot6
+xpos -983
+ypos 76
+}
+set N23988000 [stack 0]
+Dot {
+name Dot5
+xpos -834
+ypos 76
+}
+Roto {
+output alpha
+curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 2097152}
+    {t x44800000 x44428000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}
+    {curvegroup Rectangle1 512 bezier
+     {{cc
+       {f 8192}
+       {p
+        {0 xc2bf5556}
+        {x42ff7687 x43880001}
+        {x424025e6}
+        {xc2720000}
+        {x43978000 x43880000}
+        {0 xc2bf5554}
+        {0 x42bf5555}
+        {x43978000 xc1700000}
+        {xc2720000}
+        {x424025e6}
+        {x42ff7687 xc1700002}
+        {0 x42bf5556}}}
+      {cc
+       {f 8192}
+       {p
+        {0 xc2bf5556}
+        {}
+        {x424025e6}
+        {xc2720000}
+        {}
+        {0 xc2bf5554}
+        {0 x42bf5555}
+        {}
+        {xc2720000}
+        {x424025e6}
+        {}
+        {0 x42bf5556}}}}
+     {t x43544000 x43008000}
+     {a osw x41200000 osf 0 str 1 spx x44800000 spy x44428000 sb 1 ltn x43978000 ltm x43978000 tt x41000000}}}}}}
+toolbox {selectAll {
+  { selectAll str 1 ssx 1 ssy 1 sf 1 }
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 tt 4 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 tt 8 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+toolbar_brush_hardness 0.200000003
+toolbar_source_transform_scale {1 1}
+toolbar_source_transform_center {1024 778}
+colorOverlay {0 0 0 0}
+lifetime_type "all frames"
+lifetime_start 303
+lifetime_end 303
+motionblur_shutter_offset_type centred
+source_black_outside true
+name Roto2
+xpos -868
+ypos 233
+}
+push $N23988000
+RotoPaint {
+curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 2097152}
+    {t x43000000 x43000000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}
+    {curvegroup OpenSpline1 1049088 bezier
+     {{cc
+       {f 1056800}
+       {p
+        {}
+        {{a osw x3e8cccdb osf 0}     x425d999a x42c26667}
+        {x41099998 xc254ccce}
+        {xc20b3334 xbeccccc0}
+        {{a osw x3e8cccdb osf 0}     x43013333 x41b33333}
+        {x420b3334 x3eccccc0}
+        {x3eccce00 xc256666a}
+        {{a osw x3e8cccdb osf 0}     x434ecccd x42c00001}
+        {}}}
+      {cc
+       {f 1056800}
+       {p
+        {}
+        {}
+        {x41099998 xc254ccce}
+        {xc20b3334 xbeccccc0}
+        {}
+        {x420b3334 x3eccccc0}
+        {x3eccce00 xc256666a}
+        {}
+        {}}}}
+     {t x43027778 x428fbbbc}
+     {a osbe 0 osee 0 osw x41200000 osf 0 str 1 ltn x43978000 ltm x43978000 tt x41200000}}
+    {curvegroup BSpline2 512 bspline
+     {{cc
+       {f 8192}
+       {p
+        {{a}     x42bc41d3 x42973333}
+        {{a}     x42e20000 x42a86666}
+        {{a}     x42fa0000 x42a3999a}
+        {{a}     x43070000 x42a8cccd}
+        {{a}     x4320457d x4291c57c}
+        {{a}     x43063333 x4261999a}
+        {{a}     x42e66666 x42680000}}}
+      {cc
+       {f 8192}
+       {p
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}}}}
+     {t x42fa83a9 x4292db6e}
+     {a osw x41200000 osf 0 str 1 spx x43000000 spy x43000000 sb 1 ltn x43978000 ltm x43978000 tt x40c00000}}
+    {curvegroup BSpline1 512 bspline
+     {{cc
+       {f 8192}
+       {p
+        {{a}     x42f4aeef x431e1ddd}
+        {{a}     x42eb4000 x43000aaa}
+        {{a}     x42dc969f x42e46eef}
+        {{a}     x42df92b1 x42d26665}
+        {{a}     x42f1599b x42d46aaa}
+        {{a}     x42fdf7b6 x42d78ccc}
+        {{a}     x43086666 x42d33333}
+        {{a}     x430fa47b x42d59999}
+        {{a}     x43108c29 x42e73bbb}
+        {{a}     x4308cccd x4302cccd}
+        {{a}     x43054aaa x431f8888}
+        {{a}     x42fecccc x43294ccd}}}
+      {cc
+       {f 8192}
+       {p
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}
+        {{a}}}}}
+     {t x42fc8f5d x42ea70a5}
+     {a osw x41200000 osf 0 str 1 spx x43000000 spy x43000000 sb 1 ltn x43978000 ltm x43978000 tt x40c00000}}
+    {curvegroup eye1 512 bezier
+     {{cc
+       {f 8192}
+       {px x43978000
+        {xc16072d0 0}
+        {x4324bdf5 x430cd9b6}
+        {x416072d0 0}
+        {0 xc0ab6de0}
+        {x433e245b x43168ce9}
+        {0 x40ab6de0}
+        {x416072d0 0}
+        {x4324bdf5 x4320401c}
+        {xc16072d0 0}
+        {0 x40ab6de0}
+        {x430b578f x43168ce9}
+        {0 xc0ab6de0}}}
+      {cc
+       {f 8192}
+       {px x43978000
+        {xc16072d0 0}
+        {0 0}
+        {x416072d0 0}
+        {0 xc0ab6de0}
+        {0 0}
+        {0 x40ab6de0}
+        {x416072d0 0}
+        {0 0}
+        {xc16072d0 0}
+        {0 x40ab6de0}
+        {0 0}
+        {0 xc0ab6de0}}}}
+     {t x43223334 x43108000}
+     {a osw x41200000 osf 0 str 1 spx x43000000 spy x43000000 sb 1 ltn x43978000 ltm x43978000 tt x40e00000}}
+    {curvegroup eye 512 bezier
+     {{cc
+       {f 8192}
+       {px x43978000
+        {xc16072d0 0}
+        {x42b6a2a6 x430cf9fb}
+        {x416072d0 0}
+        {0 xc0ab6de0}
+        {x42e96f72 x4316ad2e}
+        {0 x40ab6de0}
+        {x416072d0 0}
+        {x42b6a2a6 x43206061}
+        {xc16072d0 0}
+        {0 x40ab6de0}
+        {x4283d5da x4316ad2e}
+        {0 xc0ab6de0}}}
+      {cc
+       {f 8192}
+       {px x43978000
+        {xc16072d0 0}
+        {0 0}
+        {x416072d0 0}
+        {0 xc0ab6de0}
+        {0 0}
+        {0 x40ab6de0}
+        {x416072d0 0}
+        {0 0}
+        {xc16072d0 0}
+        {0 x40ab6de0}
+        {0 0}
+        {0 xc0ab6de0}}}}
+     {t x43223334 x43108000}
+     {a osw x41200000 osf 0 str 1 spx x43000000 spy x43000000 sb 1 ltn x43978000 ltm x43978000 tt x40e00000}}}}}}
+toolbox {selectAll {
+  { selectAll str 1 ssx 1 ssy 1 sf 1 }
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 tt 4 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 tt 6 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 tt 7 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createOpenSpline str 1 ssx 1 ssy 1 sf 1 tt 10 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+toolbar_brush_hardness 0.200000003
+toolbar_source_transform_scale {1 1}
+toolbar_source_transform_center {320 240}
+colorOverlay {0 0 0 0}
+lifetime_type "all frames"
+lifetime_start 303
+lifetime_end 303
+motionblur_shutter_offset_type centred
+name RotoPaint1
+xpos -1017
+ypos 163
+}
+set Ncf88b400 [stack 0]
+Dot {
+name Dot7
+xpos -1115
+ypos 166
+}
+Mirror2 {
+flop true
+name Mirror2_1
+xpos -1149
+ypos 239
+}
+push $Ncf88b400
+Keymix {
+inputs 3
+name Keymix1
+xpos -1017
+ypos 233
+}
+FilterErode {
+channels all
+size 2.6
+name FilterErode1
+xpos -1017
+ypos 269
+}
+EdgeDetectWrapper {
+name EdgeDetect1
+xpos -1017
+ypos 310
+}
+Shuffle2 {
+fromInput1 {{0} B}
+fromInput2 {{0} B}
+mappings "4 rgba.alpha 0 3 rgba.red 0 0 rgba.alpha 0 3 rgba.green 0 1 rgba.alpha 0 3 rgba.blue 0 2 rgba.alpha 0 3 rgba.alpha 0 3"
+name Shuffle1
+xpos -1017
+ypos 346
+}
+Dot {
+name Dot3
+xpos -983
+ypos 565
+}
+Transform {
+translate {{parent.Transform7.translate} {parent.Transform7.translate}}
+rotate {{parent.Transform7.rotate}}
+scale {{parent.Transform7.scale}}
+skewX {{parent.Transform7.skewX}}
+skewY {{parent.Transform7.skewY}}
+center {128 128}
+filter Lanczos4
+name Transform1
+xpos -1017
+ypos 622
+}
+CornerPin2D {
+to1 {0 0}
+to2 {256 0}
+to3 {256 256}
+to4 {0 256}
+invert true
+filter Lanczos4
+from1 {{parent.controller.chin+parent.controller.left} {parent.controller.chin+parent.controller.left}}
+from2 {{parent.controller.chin+parent.controller.right} {parent.controller.chin+parent.controller.right}}
+from3 {{parent.controller.forehead+parent.controller.right} {parent.controller.forehead+parent.controller.right}}
+from4 {{parent.controller.forehead+parent.controller.left} {parent.controller.forehead+parent.controller.left}}
+name CornerPin2D3
+xpos -1017
+ypos 646
+}
+push $Nd294bc00
+Dot {
+name Dot1
+xpos -313
+ypos 478
+}
+set Nd298c000 [stack 0]
+CornerPin2D {
+to1 {0 0}
+to2 {{parent.controller.size} 0}
+to3 {{parent.controller.size} {parent.controller.size}}
+to4 {0 {parent.controller.size}}
+invert false
+filter Lanczos4
+from1 {{parent.controller.chin+parent.controller.left} {parent.controller.chin+parent.controller.left}}
+from2 {{parent.controller.chin+parent.controller.right} {parent.controller.chin+parent.controller.right}}
+from3 {{parent.controller.forehead+parent.controller.right} {parent.controller.forehead+parent.controller.right}}
+from4 {{parent.controller.forehead+parent.controller.left} {parent.controller.forehead+parent.controller.left}}
+name CornerPin2D2
+xpos -483
+ypos 475
+}
+Reformat {
+type "to box"
+box_width {{parent.controller.size}}
+box_height {{parent.controller.size}}
+resize none
+center false
+filter Lanczos4
+name Reformat5
+xpos -483
+ypos 499
+}
+OCIOColorSpace {
+in_colorspace scene_linear
+out_colorspace "Output - sRGB"
+name OCIOColorSpace5
+xpos -483
+ypos 523
+}
+Inference {
+modelFile C:/Users/Lukas/PycharmProjects/combModel/exports/export.cat
+halfPrecision {{parent.optimize4mem}}
+serialiseKnob {}
+name Inference4
+xpos -483
+ypos 556
+}
+OCIOColorSpace {
+in_colorspace "Output - sRGB"
+out_colorspace scene_linear
+name OCIOColorSpace6
+xpos -483
+ypos 590
+}
+Transform {
+rotate 4
+center {{parent.controller.size*0.5} {parent.controller.size*0.5}}
+filter Lanczos4
+name Transform7
+xpos -483
+ypos 614
+}
+CornerPin2D {
+to1 {0 0}
+to2 {{parent.controller.size} 0}
+to3 {{parent.controller.size} {parent.controller.size}}
+to4 {0 {parent.controller.size}}
+invert true
+filter Lanczos4
+from1 {{parent.controller.chin+parent.controller.left} {parent.controller.chin+parent.controller.left}}
+from2 {{parent.controller.chin+parent.controller.right} {parent.controller.chin+parent.controller.right}}
+from3 {{parent.controller.forehead+parent.controller.right} {parent.controller.forehead+parent.controller.right}}
+from4 {{parent.controller.forehead+parent.controller.left} {parent.controller.forehead+parent.controller.left}}
+name CornerPin2D1
+xpos -483
+ypos 638
+}
+push $Nd298c000
+Copy {
+inputs 2
+from0 -rgba.alpha
+to0 -rgba.alpha
+channels rgba
+name Copy1
+xpos -347
+ypos 626
+}
+Switch {
+inputs 2
+which {{parent.showGuide}}
+name Switch1
+xpos -347
+ypos 939
+}
+Output {
+name Output1
+xpos -347
+ypos 1058
+}
+end_group

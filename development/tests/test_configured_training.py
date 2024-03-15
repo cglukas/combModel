@@ -5,8 +5,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 import torch
 
-import development.trainer.configured_training
-import wandb
 from adabelief_pytorch import AdaBelief
 
 from development.data_io.dataset_manager import DatasetManager
@@ -167,9 +165,9 @@ class TestInitModelAndOptimizer:
             ada_belief_mock.return_value = ada_belief_instance
             yield ada_belief_mock
 
+    @pytest.mark.usefixtures("model_mock")
     def test_init_model_and_optimizer(
         self,
-        model_mock: MagicMock,
         model_instance: MagicMock,
         sdg_instance: MagicMock,
         pretrain_init: MagicMock,
@@ -211,9 +209,9 @@ class TestInitModelAndOptimizer:
         sgd_mock.assert_called_with(model_instance.parameters(), lr=2e-4, momentum=0.9)
         pretrain_init.assert_not_called()
 
+    @pytest.mark.usefixtures("model_mock")
     def test_with_ada_belief(
         self,
-        model_mock: MagicMock,
         sgd_mock: MagicMock,
         ada_belief_instance: MagicMock,
         ada_belief_mock: MagicMock,
@@ -230,9 +228,8 @@ class TestInitModelAndOptimizer:
         ada_belief_mock.assert_called_once()
         assert ada_belief_mock.call_args.kwargs["lr"] == 2e-5
 
-    def test_wrong_optimizer(
-        self, model_mock: MagicMock, sgd_mock: MagicMock, ada_belief_mock: MagicMock
-    ):
+    @pytest.mark.usefixtures("model_mock", "sgd_mock", "ada_belief_mock")
+    def test_wrong_optimizer(self):
         """Test that a value error is raised if the wrong optimizer class is used."""
         wrong_conf = TrainingConfig(datasets=["1", "2"], optimizer="WrongOptimizer")
 

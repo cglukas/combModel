@@ -20,6 +20,8 @@ from development.trainer.training_logger import TrainLogger, WandBLogger
 
 @dataclass
 class TrainingConfig:
+    """Dataclass for the training configuration."""
+
     optimizer: str = "SGD"
     """Optimizer class to use. Possible values: 'SGD', 'AdaBelief'. Will not be used when training is resumed."""
     learning_rate: float = 10e-4

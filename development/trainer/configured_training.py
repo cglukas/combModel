@@ -14,7 +14,9 @@ from development.trainer.training_logger import TrainLogger
 @dataclass
 class TrainingConfig:
     device: str = "cpu"
+    """The device where the training should run on."""
     datasets: list[str] = field(default_factory=list)
+    """The list of datasets that should be considered for training."""
 
 
 def _load_model(config: TrainingConfig) -> CombModel:
@@ -35,6 +37,9 @@ def _load_level_manager(config: TrainingConfig) -> AbstractLevelManager:
 
 def _load_datasets(config: TrainingConfig) -> DatasetManager:
     """Load the datasets from the config."""
+    if len(config.datasets) == 0:
+        msg = "No datasets provided."
+        raise ValueError(msg)
     datasets = []
     device = torch.device(config.device)
     for path in config.datasets:

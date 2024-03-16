@@ -4,6 +4,7 @@ from pathlib import Path
 import torch.cuda
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
+from tqdm import tqdm
 
 from development.data_io.dataloader2 import ImageSize, PersonDataset
 from development.model.comb_model import CombModel
@@ -36,7 +37,7 @@ def display_latent_encoding(
     for person, loader in enumerate(datasets):
         loader.set_scale(ImageSize.from_index(level))
         latents = []
-        for index, (sample, _) in enumerate(loader):
+        for index, (sample, _) in enumerate(tqdm(loader)):
             # Second part of loader will be the mask. This is only necessary for training.
             batch = sample[None, :]
 

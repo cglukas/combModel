@@ -211,7 +211,7 @@ class TestInitModelAndOptimizer:
             call.sgd_init(model_instance.parameters(), lr=ANY, momentum=ANY),
         ], "The optimizer was initialized before the model was on the right device."
 
-    @pytest.mark.parametrize(("datasets"), [["0"], ["0"] * 3])
+    @pytest.mark.parametrize("datasets", [["0"], ["0"] * 3])
     def test_without_checkpoint(
         self,
         model_instance: MagicMock,
@@ -297,7 +297,8 @@ class TestYamlConfigParsing:
             learning_rate=2e-5,
             trainings_folder="test_folder",
             pretraining_checkpoint="path/to/pretraining.pth",
-            resume_checkpoint="path/to/resume_checkpoint.pth",  # This is technically wrong.
+            # This is technically wrong: resume_checkpoint and pretraining_checkpoint would never be used together.
+            resume_checkpoint="path/to/resume_checkpoint.pth",
             device="GPU",
             datasets=["test1", "test2", "test3"],
             level_manager_config={

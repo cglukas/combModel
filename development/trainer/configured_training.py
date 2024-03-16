@@ -167,7 +167,7 @@ def _yml_to_config(yml_text: str) -> list[TrainingConfig]:
     return all_configs
 
 
-def _run_training(config: TrainingConfig) -> None:
+def run_training_for_single_config(config: TrainingConfig) -> None:
     """Run the training based on the config."""
     if config.resume_checkpoint and config.pretraining_checkpoint:
         msg = (
@@ -228,7 +228,7 @@ def run_training(config_files: list[str], raise_error: bool):
 
     for single_config in all_configs:
         try:
-            _run_training(single_config)
+            run_training_for_single_config(single_config)
         except ConfigError as e:
             if raise_error:
                 raise e

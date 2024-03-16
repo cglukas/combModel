@@ -16,7 +16,7 @@ from development.trainer.configured_training import (
     _load_datasets,
     _load_level_manager,
     _load_logger,
-    _run_training,
+    run_training_for_single_config,
     _yml_to_config,
 )
 from development.trainer.level_manager import ScoreGatedLevelManager
@@ -339,4 +339,4 @@ def test_run_training_wrong_config():
         ConfigError,
         match="Resuming with pretrained checkpoint does not work. Only provide one value.",
     ):
-        _run_training(conf)
+        run_training_for_single_config(conf)

@@ -104,13 +104,13 @@ class Trainer:
 
         with torch.no_grad():
             for person, img in last_images.items():
-                self.current_person = (person + 1) % len(self.dataset_manager._datasets)
+                self.current_person = (person + 1) % self.dataset_manager.num_datasets
                 self.visualizer.add_image(img)
                 swapped = self.process_batch(img.unsqueeze(dim=0))
                 self.visualizer.add_image(swapped.squeeze())
         self.visualizer.show()
 
-        self.epoch_score = self.accumulated_score / i / len(self.dataset_manager._datasets)
+        self.epoch_score = self.accumulated_score / i / self.dataset_manager.num_datasets
         if self.logger:
             self.logger.log(
                 level=self.level_manager.level,

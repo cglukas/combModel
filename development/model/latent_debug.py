@@ -4,9 +4,10 @@ from pathlib import Path
 import torch.cuda
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
+from tqdm import tqdm
 
 from development.data_io.dataloader2 import ImageSize, PersonDataset
-from development.model.comb_model import CombModel
+from development.model.utils import initialize_comb_model
 
 
 def display_latent_encoding(
@@ -25,8 +26,7 @@ def display_latent_encoding(
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    model = CombModel(persons=2)
-    model.load_state_dict(torch.load(model_path))
+    model = initialize_comb_model(Path(model_path))
     model.to(device)
 
     # Algorithm to reduce dimensionality of latent vectors.
@@ -36,7 +36,7 @@ def display_latent_encoding(
     for person, loader in enumerate(datasets):
         loader.set_scale(ImageSize.from_index(level))
         latents = []
-        for index, (sample, _) in enumerate(loader):
+        for index, (sample, _) in enumerate(tqdm(loader)):
             # Second part of loader will be the mask. This is only necessary for training.
             batch = sample[None, :]
 
@@ -55,16 +55,17 @@ def display_latent_encoding(
 
 
 if __name__ == "__main__":
+    datasets = [
+        PersonDataset(
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
+        ),
+        PersonDataset(
+            Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
+        )
+    ]
     display_latent_encoding(
-        model_path=r"C:\Users\Lukas\PycharmProjects\combModel\trainings\27-02-24_19_05\comb_model_2-0.8.pth",
-        datasets=[
-            PersonDataset(
-                Path(
-                    r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"
-                ),
-            )
-        ]
-        * 2,
-        level=1,
-        max_samples=1000,
+        model_path=r"C:\Users\Lukas\PycharmProjects\combModel\trainings\2024-03-15_08_55\model_5_1.0.pth",
+        datasets=datasets,
+        level=5,
+        max_samples=100,
     )

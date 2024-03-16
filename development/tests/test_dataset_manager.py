@@ -30,6 +30,7 @@ def test_set_level(start_dataloaders: MagicMock):
     person_set.set_scale.assert_called_with(ImageSize.from_index(5))
     start_dataloaders.assert_called()
 
+
 @pytest.mark.parametrize(("wrong_level"), [-1, 10, 1.54])
 def test_set_level_wrong_level(wrong_level: float):
     """Test that an error is raised if the wrong level is set."""
@@ -64,3 +65,11 @@ def test_end_of_dataset(batchsize: int):
     for batches in manager.iter_batches():
         assert batches[0].nelement() != 0
         assert batches[1].nelement() != 0
+
+
+@pytest.mark.parametrize("datasets", [[[0], [0]], [[0]], [], [[0]] * 5])
+def test_num_datasets(datasets: list[list]):
+    """Test that the amount of datasets can be read."""
+    manager = DatasetManager(datasets=datasets)
+
+    assert manager.num_datasets == len(datasets)

@@ -5,7 +5,7 @@ from torchmetrics import StructuralSimilarityIndexMeasure
 
 from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
-from development.trainer.level_manager import AbstractLevelManager, LinearManager
+from development.trainer.level_manager import AbstractLevelManager, EndOfLevelsReached, LinearManager
 from development.trainer.training_file_io import TrainingIO
 from development.trainer.training_logger import TrainLogger
 from development.trainer.visualizer import TrainVisualizer
@@ -53,26 +53,20 @@ class Trainer:
         self.epoch = 0
         self.epoch_score = 0
 
-        self.training = True
         self.visualizer = TrainVisualizer()
         self.logger = logger
 
     def train(self):
         """Start the training process."""
         try:
-            while self.training:
+            while True:
                 self.dataset_manager.set_level(self.level_manager.level)
                 self.epoch += 1
                 self.train_one_epoch()
                 if self.epoch % self.save_epochs == 1:
                     self.save()
-                # TODO: add stop condition if max level is reached.
                 self.level_manager.increase_level_and_blend(score=self.epoch_score)
-        except Exception:
-            raise
-        finally:
-            # Allways save the last training state.
-            # TODO modify the file so that it can be differentiated from normal saves.
+        except (KeyboardInterrupt, EndOfLevelsReached):
             self.save()
 
     def save(self):
@@ -110,13 +104,13 @@ class Trainer:
 
         with torch.no_grad():
             for person, img in last_images.items():
-                self.current_person = (person + 1) % len(self.dataset_manager._datasets)
+                self.current_person = (person + 1) % self.dataset_manager.num_datasets
                 self.visualizer.add_image(img)
                 swapped = self.process_batch(img.unsqueeze(dim=0))
                 self.visualizer.add_image(swapped.squeeze())
         self.visualizer.show()
 
-        self.epoch_score = self.accumulated_score / i / len(self.dataset_manager._datasets)
+        self.epoch_score = self.accumulated_score / i / self.dataset_manager.num_datasets
         if self.logger:
             self.logger.log(
                 level=self.level_manager.level,

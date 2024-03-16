@@ -26,6 +26,11 @@ class DatasetManager:
         self.epoch_percent: float = 0.0
         """Percentage of the processed batches."""
 
+    @property
+    def num_datasets(self) -> int:
+        """The amount of datasets in the dataset manager."""
+        return len(self._datasets)
+
     def set_batch_size(self, size: int):
         """Set the batch size.
 

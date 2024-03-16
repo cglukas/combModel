@@ -1,0 +1,49 @@
+datasets:
+  - "1"
+  - "2"
+
+---
+
+optimizer: AdaBelief
+
+---
+
+wandb:
+  project: test_project
+  user: me
+
+---
+
+device: gpu
+learning_rate: 1.0e-10  # Scientific notation needs to start with an explicit float.
+level_manager_config:
+  rate: 0.09
+  min_score: 0.7
+
+---
+name: TestTraining
+
+optimizer: SGD
+device: GPU
+learning_rate: 0.00002
+datasets:
+  - test1
+  - test2
+  - test3
+
+trainings_folder: test_folder
+pretraining_checkpoint: path/to/pretraining.pth
+# Having both checkpoints in the config is technically wrong.
+# But in this case we are testing all possible config values.
+
+resume_checkpoint: path/to/resume_checkpoint.pth
+
+level_manager_config:
+  rate: 0.1
+  min_score: 0.9
+  max_level: 4
+  max_repeat: 15
+
+wandb:
+  project: test_project
+  user: me

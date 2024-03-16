@@ -211,6 +211,7 @@ class TestInitModelAndOptimizer:
             call.sgd_init(model_instance.parameters(), lr=ANY, momentum=ANY),
         ], "The optimizer was initialized before the model was on the right device."
 
+    @pytest.mark.parametrize(("datasets"), [["0"], ["0"] * 3])
     def test_without_checkpoint(
         self,
         model_instance: MagicMock,
@@ -218,10 +219,11 @@ class TestInitModelAndOptimizer:
         sdg_instance: MagicMock,
         pretrain_init: MagicMock,
         sgd_mock: MagicMock,
+        datasets: list[list],
     ):
         """Test that the model and optimizer can be initialized."""
         conf = TrainingConfig(
-            datasets=["1", "2"],
+            datasets=datasets,
             learning_rate=2e-4,
         )
 
@@ -229,7 +231,7 @@ class TestInitModelAndOptimizer:
 
         assert model is model_instance
         assert optimizer is sdg_instance
-        model_mock.assert_called_with(persons=2)
+        model_mock.assert_called_with(persons=len(datasets))
         sgd_mock.assert_called_with(model_instance.parameters(), lr=2e-4, momentum=0.9)
         pretrain_init.assert_not_called()
 
@@ -238,7 +240,10 @@ class TestInitModelAndOptimizer:
         """Test that a ConfigError is raised if no datasets are used."""
         conf = TrainingConfig()
 
-        with pytest.raises(ConfigError, match="No datasets provided. Can't infer number of persons for the model."):
+        with pytest.raises(
+            ConfigError,
+            match="No datasets provided. Can't infer number of persons for the model.",
+        ):
             _init_model_and_optimizer(conf)
 
         model_mock.assert_not_called()

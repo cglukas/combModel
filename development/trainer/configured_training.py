@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 import torch
+import wandb
 import yaml
 from adabelief_pytorch import AdaBelief
 from torch.optim import Optimizer
@@ -171,6 +172,7 @@ def _run_training(config: TrainingConfig) -> None:
             "Resuming with pretrained checkpoint does not work. Only provide one value."
         )
         raise ConfigError(msg)
+
     dataset_manager = _load_datasets(config)
     level_manager = _load_level_manager(config)
     if config.pretraining_checkpoint:
@@ -178,14 +180,18 @@ def _run_training(config: TrainingConfig) -> None:
     else:
         model = CombModel(persons=len(config.datasets))
         optimizer = _get_optimizer(config, model)
+
     training_io = TrainingIO(model, optimizer, level_manager)
+    output_folder = Path(config.trainings_folder)
+    if not output_folder.exists():
+        output_folder.mkdir()
+    training_io.set_folder(output_folder)
 
     if config.resume_checkpoint:
         training_io.load(Path(config.resume_checkpoint))
 
     logger = _load_logger(config)
     device = torch.device(config.device)
-    model.to(device)
 
     trainer = Trainer(
         model=model,
@@ -198,7 +204,8 @@ def _run_training(config: TrainingConfig) -> None:
     )
 
     print(f"Run training for {config.name}")
-    # trainer.train()
+    trainer.train()
+    wandb.finish()
 
 
 @click.command("Run Training")

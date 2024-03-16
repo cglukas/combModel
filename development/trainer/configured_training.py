@@ -58,6 +58,8 @@ def _init_model_and_optimizer(config: TrainingConfig) -> tuple[CombModel, Optimi
     If a pretraining is specified, this copies the pretraining to all decoders of the model.
     """
     persons = len(config.datasets)
+    if persons == 0:
+        raise ConfigError("No datasets provided. Can't infer number of persons for the model.")
 
     if config.pretraining_checkpoint:
         checkpoint = Path(config.pretraining_checkpoint)

@@ -233,6 +233,16 @@ class TestInitModelAndOptimizer:
         sgd_mock.assert_called_with(model_instance.parameters(), lr=2e-4, momentum=0.9)
         pretrain_init.assert_not_called()
 
+    @pytest.mark.usefixtures("sgd_mock")
+    def test_without_datasets(self, model_mock: MagicMock):
+        """Test that a ConfigError is raised if no datasets are used."""
+        conf = TrainingConfig()
+
+        with pytest.raises(ConfigError, match="No datasets provided. Can't infer number of persons for the model."):
+            _init_model_and_optimizer(conf)
+
+        model_mock.assert_not_called()
+
     @pytest.mark.usefixtures("model_mock")
     def test_with_ada_belief(
         self,

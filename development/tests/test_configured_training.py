@@ -33,6 +33,7 @@ def test_load_datasets(dataset_mock: MagicMock, datasets: list[str]):
     manager = _load_datasets(conf)
 
     assert isinstance(manager, DatasetManager)
+    assert manager.num_datasets == len(datasets)
     assert dataset_mock.call_count == len(datasets)
     for dataset in datasets:
         dataset_mock.assert_any_call(dataset, device=device)
@@ -297,9 +298,11 @@ class TestYamlConfigParsing:
         """Setup the testcase by loading the TrainingConfigs from the test yml."""
         with open(
             Path(__file__).parent / "test_configured_training_config.yml",
-            encoding="utf-8"
+            encoding="utf-8",
         ) as file:
-            self._loaded_configs = _yml_to_config(file.read())
+            self._loaded_configs = (  # pylint: disable=attribute-defined-outside-init
+                _yml_to_config(file.read())
+            )
 
     def test_configs_match(self):
         """Test that both configs match in size."""

@@ -145,7 +145,7 @@ def _load_datasets(config: TrainingConfig) -> DatasetManager:
     datasets = []
     device = torch.device(config.device)
     for path in config.datasets:
-        datasets = PersonDataset(path, device=device)
+        datasets.append(PersonDataset(path, device=device))
     return DatasetManager(datasets=datasets)
 
 

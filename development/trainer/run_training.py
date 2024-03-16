@@ -1,141 +1,94 @@
-"""Module for training and validating the model."""
-import re
-from datetime import datetime
+"""File for training based on configuration files."""
 from pathlib import Path
 
-import cv2
-import torch.cuda
+import click
+import torch
 import wandb
-from adabelief_pytorch import AdaBelief
 
-from development.data_io.dataloader2 import ImageSize, PersonDataset, TestDataSet
-from development.data_io.dataset_manager import DatasetManager
 from development.model.comb_model import CombModel
-from development.trainer import level_manager
+from development.trainer.configured_training.configuration import (
+    TrainingConfig,
+    yml_to_config,
+)
+from development.trainer.configured_training.load_from_config import (
+    ConfigError,
+    get_optimizer,
+    init_model_and_optimizer,
+    load_datasets,
+    load_level_manager,
+    load_logger,
+)
 from development.trainer.trainer import Trainer
 from development.trainer.training_file_io import TrainingIO
-from development.trainer.visualizer import TrainVisualizer
-from development.trainer.training_logger import WandBLogger
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def get_generic() -> PersonDataset:
-    """Get a dataloader for the general human faces dataset."""
-    return PersonDataset(
-        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
-        device=DEVICE,
-    )
+def run_training_for_single_config(config: TrainingConfig) -> None:
+    """Run the training based on the config."""
+    if config.resume_checkpoint and config.pretraining_checkpoint:
+        msg = (
+            "Resuming with pretrained checkpoint does not work. Only provide one value."
+        )
+        raise ConfigError(msg)
 
+    dataset_manager = load_datasets(config)
+    level_manager = load_level_manager(config)
+    if config.pretraining_checkpoint:
+        model, optimizer = init_model_and_optimizer(config)
+    else:
+        model = CombModel(persons=len(config.datasets))
+        optimizer = get_optimizer(config, model)
 
-def get_test_set() -> PersonDataset:
-    """Get a generic dataset with only 100 samples."""
-    return TestDataSet(
-        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\person3"),
-        device=DEVICE,
-    )
+    training_io = TrainingIO(model, optimizer, level_manager)
+    output_folder = Path(config.trainings_folder)
+    if not output_folder.exists():
+        output_folder.mkdir()
+    training_io.set_folder(output_folder)
 
+    if config.resume_checkpoint:
+        training_io.load(Path(config.resume_checkpoint))
 
-def main():
-    """Main training routine."""
-    ### Hyper parameter
-    learning_rate = 10e-4  # 10e-4 is used in the disney research paper.
-    blend_rate = 0.05
-    bruce = PersonDataset(
-        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\bruce"),
-        device=DEVICE,
-    )
-    michael = PersonDataset(
-        Path(r"C:\Users\Lukas\PycharmProjects\combModel\data\preprocessed\michael"),
-        device=DEVICE,
-    )
-    datasets = [bruce, michael]
-    model = CombModel(
-        persons=len(datasets)
-    )
-    model.to(DEVICE)
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
-    # optimizer = adabelief_gan_small(model)
-    lvl_manager = level_manager.ScoreGatedLevelManager(
-        rate=blend_rate, min_score=0.95, max_level=8, max_repeat=10
-    )
-    # lvl_manager = level_manager.LinearManager(rate=blend_rate, max_level=8)
-    dataset_manager = DatasetManager(datasets)
-    logger = WandBLogger(
-        project="combmodel",
-        entity="cglukas",
-        learning_rate=learning_rate,
-        blend_rate=blend_rate,
-        optimizer=str(type(optimizer)),
-    )
-
-    start = datetime.now().strftime("%Y-%m-%d_%H_%M")
-    filepath = Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings") / f"{start}"
-    if not filepath.exists():
-        print(f"{filepath} created")
-        filepath.mkdir(exist_ok=True)
-    file_io = TrainingIO(model, optimizer, lvl_manager)
-    file_io.set_folder(filepath)
-    file_io.load(Path(r"C:\Users\Lukas\PycharmProjects\combModel\trainings\2024-03-14_21_18\model_3_0.25.pth"))
+    logger = load_logger(config)
+    device = torch.device(config.device)
 
     trainer = Trainer(
         model=model,
         optimizer=optimizer,
         dataset_manager=dataset_manager,
-        file_io=file_io,
-        device=DEVICE,
+        file_io=training_io,
+        device=device,
         logger=logger,
-        level_manager=lvl_manager,
+        level_manager=level_manager,
     )
+
+    print(f"Run training for {config.name}")
     trainer.train()
     wandb.finish()
 
 
-def adabelief_gan_small(model) -> AdaBelief:
-    """Get a AdaBelief instance for the model with the GAN(small) settings applied."""
-    return AdaBelief(
-        model.parameters(),
-        lr=2e-5,  # Changed from 2e-5
-        betas=(0.5, 0.999),
-        eps=1e-12,
-        weight_decay=0,
-        weight_decouple=True,
-        rectify=False,
-        fixed_decay=False,
-    )
+@click.command("Run Training")
+@click.option(
+    "--raise-error",
+    help="Will raise configuration errors and won't skip invalid configs.",
+    default=False,
+    is_flag=True,
+)
+@click.argument("config_files", nargs=-1, type=str)
+def run_training(config_files: list[str], raise_error: bool):
+    """Run the training loop for the training configs the config file."""
+    all_configs: list[TrainingConfig] = []
 
+    for c_file in config_files:
+        with open(c_file, encoding="utf-8") as file:
+            all_configs.extend(yml_to_config(file.read()))
 
-def validate(model_state_dict: Path | str) -> None:
-    """Load the model and process a sample batch and display it for visual validation.
-
-    Args:
-        model_state_dict: path to the state dict of the trained model.
-    """
-    match = re.match(r".*_(?P<level>\d)-(?P<blend>\d\.\d)\.pth", str(model_state_dict))
-    level = int(match.group("level"))
-    blend = float(match.group("blend"))
-    loaders = [get_generic(), get_generic()]
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CombModel(persons=len(loaders))
-    model.eval()
-    model.to(device)
-    state_dict = torch.load(model_state_dict)
-    model.load_state_dict(state_dict)
-    visualizer = TrainVisualizer()
-    for person, loader in enumerate(loaders):
-        loader.set_scale(ImageSize.from_index(level))
-        for sample in loader:
-            image, _ = sample
-            image = image.to(device)
-            with torch.no_grad():
-                processed = model.progressive_forward(
-                    person=person, batch=image, level=level, last_level_influence=blend
-                )
-            visualizer.add_batches(image, processed)
-            break
-    visualizer.show()
-    cv2.waitKey(0)
+    for single_config in all_configs:
+        try:
+            run_training_for_single_config(single_config)
+        except ConfigError as e:
+            if raise_error:
+                raise e
+            print(f"Skipping config: '{single_config.name}' because of error: \n {e}")
 
 
 if __name__ == "__main__":
-    main()
+    run_training()  # pylint: disable=no-value-for-parameter

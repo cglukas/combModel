@@ -25,14 +25,14 @@ def test_linear_manager():
     assert manger.blend == 0
 
 
-def test_linear_manager_max_level():
-    """Test that the maximum level will never be exceeded."""
-    manager = LinearManager(rate=100, max_level=2)
-    manager.level = 2
+@pytest.mark.parametrize("max_level", [1, 4, 8])
+def test_linear_manager_max_level(max_level: int):
+    """Test that the maximum level will stop the training."""
+    manager = LinearManager(rate=100, max_level=max_level)
+    manager.level = max_level
 
-    manager.increase_level_and_blend()
-
-    assert manager.level == 2
+    with pytest.raises(EndOfLevelsReached):
+        manager.increase_level_and_blend()
 
 
 def test_score_gated_manager():

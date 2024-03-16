@@ -1,6 +1,6 @@
 """Tests for the training configuration."""
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 import torch
@@ -189,6 +189,25 @@ class TestInitModelAndOptimizer:
         assert optimizer is sdg_instance
         sgd_mock.assert_called_with(model_instance.parameters(), lr=2e-4, momentum=0.9)
         pretrain_init.assert_called_with(Path("test_checkpoint"), num_persons=2)
+
+    @pytest.mark.usefixtures("model_mock", "pretrain_init")
+    @patch("torch.device")
+    def test_model_device(
+        self, device_mock: MagicMock, model_instance: MagicMock, sgd_mock: MagicMock
+    ):
+        """Test that the model is on the right device before the optimizer loads its parameters."""
+        conf = TrainingConfig(datasets=["1", "2"], device="cuda")
+        call_order_manager = MagicMock()
+        call_order_manager.attach_mock(model_instance.to, "to_device")
+        call_order_manager.attach_mock(sgd_mock, "sgd_init")
+        device_mock.return_value = "cuda_device"
+
+        _init_model_and_optimizer(conf)
+
+        assert call_order_manager.mock_calls == [
+            call.to_device("cuda_device"),
+            call.sgd_init(model_instance.parameters(), lr=ANY, momentum=ANY),
+        ], "The optimizer was initialized before the model was on the right device."
 
     def test_without_checkpoint(
         self,

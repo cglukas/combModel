@@ -77,6 +77,8 @@ def _get_optimizer(config: TrainingConfig, model: CombModel) -> Optimizer:
     Returns:
         Initialized optimizer.
     """
+    model.to(torch.device(config.device))
+
     if config.optimizer == "SGD":
         optimizer = torch.optim.SGD(
             model.parameters(), lr=config.learning_rate, momentum=0.9

@@ -66,8 +66,9 @@ def test_load_level_manager(manager: MagicMock, config_values: dict) -> None:
     """Test that the level manager will be initialized with the config values."""
     conf = TrainingConfig(level_manager_config=config_values)
 
-    _load_level_manager(conf)
+    lvl_manager = _load_level_manager(conf)
 
+    assert lvl_manager is manager.return_value
     manager.assert_called_with(**config_values)
 
 

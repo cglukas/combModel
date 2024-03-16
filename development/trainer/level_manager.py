@@ -2,6 +2,10 @@
 from abc import ABC, abstractmethod
 
 
+class EndOfLevelsReached(Exception):
+    """Exception if the level manager will increment above the max level."""
+
+
 class AbstractLevelManager(ABC):
     """Base class for the level management."""
 
@@ -129,4 +133,6 @@ class ScoreGatedLevelManager(AbstractLevelManager):
 
         self._repeat = 0
         self.blend = 0
-        self.level = min(self._max_level, self.level + 1)
+        self.level += 1
+        if self.level > self._max_level:
+            raise EndOfLevelsReached()

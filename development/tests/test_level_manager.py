@@ -1,5 +1,8 @@
 """Tests for the level managers."""
+import pytest
+
 from development.trainer.level_manager import (
+    EndOfLevelsReached,
     LinearManager,
     ScoreGatedManager,
     ScoreGatedLevelManager,
@@ -79,3 +82,11 @@ def test_score_gated_level_manager_max_repeat():
     assert manager.blend == 0
 
 
+def test_score_gated_level_manager_max_level():
+    """Test that a EndOfLevelsReached exception is raised when the level is increased above the max_level."""
+    manager = ScoreGatedLevelManager(rate=0.1, min_score=0, max_level=2)
+    manager.level = 2
+    manager.blend = 0.9
+
+    with pytest.raises(EndOfLevelsReached):
+        manager.increase_level_and_blend()

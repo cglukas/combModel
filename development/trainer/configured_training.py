@@ -214,7 +214,7 @@ def run_training(config_files: list[str], raise_error: bool):
     all_configs: list[TrainingConfig] = []
 
     for c_file in config_files:
-        with open(c_file) as file:
+        with open(c_file, encoding="utf-8") as file:
             all_configs.extend(_yml_to_config(file.read()))
 
     for single_config in all_configs:
@@ -227,4 +227,4 @@ def run_training(config_files: list[str], raise_error: bool):
 
 
 if __name__ == "__main__":
-    run_training()
+    run_training()  # pylint: disable=no-value-for-parameter

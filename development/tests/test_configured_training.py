@@ -294,8 +294,10 @@ class TestYamlConfigParsing:
     ]
 
     def setup_method(self):
+        """Setup the testcase by loading the TrainingConfigs from the test yml."""
         with open(
-            Path(__file__).parent / "test_configured_training_config.yml"
+            Path(__file__).parent / "test_configured_training_config.yml",
+            encoding="utf-8"
         ) as file:
             self._loaded_configs = _yml_to_config(file.read())
 

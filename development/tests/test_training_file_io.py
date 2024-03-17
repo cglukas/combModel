@@ -43,7 +43,9 @@ def test_save(save_patch: MagicMock, model_and_optim_mock: tuple[MagicMock, Magi
 
 
 @patch("torch.save")
-def test_save_without_folder(save_patch: MagicMock, model_and_optim_mock: tuple[MagicMock, MagicMock]):
+def test_save_without_folder(
+    save_patch: MagicMock, model_and_optim_mock: tuple[MagicMock, MagicMock]
+):
     """Test that the save method will call torch.save with the model state and the expected filepath."""
     model, optimizer = model_and_optim_mock
 
@@ -93,3 +95,17 @@ def test_load(load_patch: MagicMock, model_and_optim_mock: tuple[MagicMock, Magi
 
     model.load_state_dict.assert_called_with({"state": "dict"})
     optimizer.load_state_dict.assert_called_with({"state": "dict"})
+
+
+def test_load_with_wrong_filepath(
+    model_and_optim_mock: tuple[MagicMock, MagicMock]
+) -> None:
+    """Test that a wrong filepath raises a ValueError."""
+    model, optim = model_and_optim_mock
+    train_io = TrainingIO(model, optim, LinearManager(rate=0))
+
+    with pytest.raises(
+        ValueError,
+        match="Can't extract level and blend values from filename: 'wrong_filename.test'",
+    ):
+        train_io.load(Path("test/wrong_filename.test"))

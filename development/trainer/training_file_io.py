@@ -60,7 +60,7 @@ class TrainingIO:
         match = self.LVL_BLEND_RE.match(model_filepath.name)
         if not match:
             msg = f"Can't extract level and blend values from filename: '{model_filepath.name}'"
-            raise RuntimeError(msg)
+            raise ValueError(msg)
         self._level_manager.level = int(match["level"])
         self._level_manager.blend = float(match["blend"])
 

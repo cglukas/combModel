@@ -44,5 +44,6 @@ def test_initialize_comb_model_from_pretraining(num_persons: int) -> None:
     reference_decoder = pretrained.decoders[0]
     for decoder in loaded_model.decoders:
         for p1, p2 in zip(decoder.parameters(), reference_decoder.parameters()):
-            if p1.data.ne(p2.data).sum() > 0:
-                assert False
+            assert (
+                p1.data.ne(p2.data).sum() == 0
+            ), "Some of the parameters are not equal."
